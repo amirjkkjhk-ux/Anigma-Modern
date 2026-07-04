@@ -2,7 +2,7 @@
 # EMAIL: amirjkkjhk@gmail.com
 # TELEGRAM ID: @Amirshoq
 # ====================================================================================
-# PROJECT: ANIGMA MODERN | VERSION: 15.0 (Live Smart Auto-Update EXE)
+# PROJECT: ANIGMA MODERN | VERSION: 15.3 (Final Safety Update & Bug Fix)
 # ====================================================================================
 
 import tkinter as tk
@@ -23,11 +23,11 @@ import urllib.request
 from Crypto.Cipher import AES 
 
 CONFIG_FILE = "config.json"
-CURRENT_VERSION = "15.0"
+CURRENT_VERSION = "15.3"
 
+# لینک‌های گیت‌هاب (حتماً مطمئن شو v15.3 در Releases آپلود شده باشد)
 VERSION_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/refs/heads/main/version.txt.txt"
-# نکته: این لینک باید مستقیماً به فایل Anigma_Modern.exe کامپایل شده در گیت‌هاب اشاره کند
-UPDATE_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/refs/heads/main/Anigma_Modern.exe"
+UPDATE_URL = "https://github.com/amirjkkjhk-ux/Anigma-Modern/releases/download/v15.3/Anigma_Modern.exe"
 
 LANGUAGES = {
     "fa": {
@@ -282,7 +282,7 @@ def check_for_updates():
 def thread_update_logic():
     try:
         req = urllib.request.Request(VERSION_URL, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=5) as response:
+        with urllib.request.urlopen(req, timeout=7) as response:
             latest_version = response.read().decode('utf-8').strip()
         if latest_version > CURRENT_VERSION:
             root.after(0, lambda: ask_for_download(latest_version))
@@ -290,12 +290,13 @@ def thread_update_logic():
             root.after(0, lambda: messagebox.showinfo("UPDATE", "برنامه شما به‌روز است!"))
             root.after(0, lambda: status_label.config(text=LANGUAGES[current_lang]["status_online"]))
     except Exception as e:
-        root.after(0, lambda: messagebox.showerror("ERROR", f"خطا در اتصال به سرور:\n{e}"))
+        error_msg = str(e)
+        root.after(0, lambda: messagebox.showerror("ERROR", f"خطا در اتصال به سرور گیت‌هاب:\n{error_msg}"))
 
 def ask_for_download(new_version):
-    msg = f"نسخه جدید {new_version} در دسترس است. آیا مایلید به صورت خودکار دانلود و نصب شود؟"
+    msg = f"نسخه جدید {new_version} در دسترس است. آیا مایلید خودکار دانلود و نصب شود؟"
     if messagebox.askyesno("NEW UPDATE AVAILABLE", msg):
-        status_label.config(text="در حال دریافت آپدیت...", fg="#ffa500")
+        status_label.config(text="در حال دریافت فایل آپدیت...", fg="#ffa500")
         threading.Thread(target=thread_download_new_version, daemon=True).start()
 
 def thread_download_new_version():
@@ -306,40 +307,46 @@ def thread_download_new_version():
         
         # اگر سورس پایتون در حال اجراست
         if current_exe_or_py.endswith(".py"):
-            with urllib.request.urlopen(req, timeout=25) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:
                 new_code = response.read()
             with open(current_exe_or_py, "wb") as f:
                 f.write(new_code)
             root.after(0, lambda: messagebox.showinfo("SUCCESS", "سورس پایتون با موفقیت آپدیت شد."))
             return
             
-        # اگر فایل EXE در حال اجراست (دانلود مستقیم فایل کامپایل شده بدون نیاز به کمپایلر سیستم)
+        # اگر فایل EXE در حال اجراست (جایگزینی مستقل فایل کامپایل شده)
         temp_new_exe = os.path.join(working_dir, "_new_version_.exe")
         
-        with urllib.request.urlopen(req, timeout=40) as response:
+        # دانلود استریم جهت عدم ارور لودینگ فایل‌های سنگین باینری
+        with urllib.request.urlopen(req, timeout=60) as response:
             with open(temp_new_exe, "wb") as f:
                 f.write(response.read())
             
         bat_path = os.path.join(working_dir, "updater.bat")
+        current_exe_name = os.path.basename(current_exe_or_py)
         
-        # ساخت یک اسکریپت جایگزینی مستقل بدون وابستگی به پوشه موقت AppData
+        # اسکریپت بتچ اصلاح شد تا ابتدا با taskkill فرآیند فایل قفل شده را ببندد و سپس جایگزین کند
         with open(bat_path, "w", encoding="utf-8") as b:
             b.write('@echo off\n')
-            b.write('timeout /t 2 /nobreak > nul\n')
+            b.write('title Anigma Safe Updater\n')
+            b.write(f'taskkill /f /im "{current_exe_name}" >nul 2>&1\n') # بستن اجباری برنامه قبلی
+            b.write('timeout /t 3 /nobreak > nul\n')
             b.write(f'cd /d "{working_dir}"\n')
-            b.write(f'del /f /q "{current_exe_or_py}"\n')
-            b.write(f'move /y "_new_version_.exe" "{current_exe_or_py}"\n')
-            b.write(f'start "" "{current_exe_or_py}"\n')
-            b.write('del "%~f0"\n')
+            b.write(f'if exist "{current_exe_name}" del /f /q "{current_exe_name}"\n') # حذف فایل لاک شده
+            b.write(f'if exist "_new_version_.exe" move /y "_new_version_.exe" "{current_exe_name}"\n') # جایگزینی
+            b.write(f'start "" "{current_exe_name}"\n') # اجرای برنامه جدید
+            b.write('del "%~f0"\n') # حذف خودupdater.bat
             
-        root.after(0, lambda: messagebox.showinfo("EXE UPDATE", "نسخه جدید با موفقیت دانلود شد. برنامه جهت اعمال تغییرات بسته و مجدداً باز خواهد شد."))
+        root.after(0, lambda: messagebox.showinfo("EXE UPDATE", "دانلود کامل شد. برنامه تا لحظاتی دیگر به طور خودکار ری‌استارت می‌شود."))
         
+        # اجرای پشت صحنه اسکریپت آپدیت
         subprocess.Popen([bat_path], shell=True, cwd=working_dir, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-        root.quit()
+        root.quit() # بستن فوری برنامه
         sys.exit(0)
         
     except Exception as e:
-        root.after(0, lambda: messagebox.showerror("DOWNLOAD ERROR", f"خطا در فرآیند جایگزینی فایل:\n{e}"))
+        error_msg = str(e)
+        root.after(0, lambda: messagebox.showerror("DOWNLOAD ERROR", f"خطا در دریافت فایل یا جایگذاری امن:\n{error_msg}"))
 
 def open_help():
     help_window = tk.Toplevel(root)
@@ -365,16 +372,13 @@ def open_help():
         "   - ابتدا در باکس شماره ۱ متن خود را تایپ کنید یا دکمه PASTE را بزنید.\n"
         "   - یک کلید امنیتی (Secret Key) وارد کنید یا روی تولید کلید تصادفی کلیک کنید.\n"
         "   - دکمه 'رمزگذاری متنی' را بزنید. متن قفل شده در باکس ۲ ظاهر می‌شود.\n"
-        "   - برای باز کردن، متن قفل شده را در باکس ۱ گذاشته، کلید اصلی را بزنید و دکمه 'رمزگشایی متنی' را فشار دهید.\n\n"
-        "۲. بخش رمزگذاری فایل ها (فوق امنیتی):\n"
+        "   - برای رمزگشایی، متن قفل شده را در باکس ۱ گذاشته، کلید اصلی را بزنید و دکمه 'رمزگشایی متنی' را فشار دهید.\n\n"
+        "۲. بخش رمزگذاری فایل ها:\n"
         "   - به تب قفل‌گذاری فایل بروید.\n"
-        "   - فایل مورد نظر خود را با دکمه انتخاب کنید یا آن را مستقیم بکشید و داخل کادر رها کنید (Drag & Drop).\n"
-        "   - رمز عبور خود را وارد کرده و دکمه 'رمزگذاری فایل' را بزنید. فایلی با پسوند .anigma در کنار فایل شما ساخته می‌شود.\n"
-        "   - برای باز کردن فایل، همان فایل .anigma را انتخاب کرده، رمز صحیح را وارد کنید و دکمه 'رمزگشایی فایل' را بزنید.\n\n"
-        "۳. سیستم مدیریت کلیدها:\n"
-        "   - با کلیک روی 'مدیریت کلیدها' می‌توانید کلیدهای پرکاربرد خود را با نام دلخواه ذخیره کنید تا هر بار نیاز به تایپ مجدد نباشد.\n\n"
-        "۴. سیستم آپدیت خودکار آنلاین کاربران معمولی:\n"
-        "   - از منوی اصلی روی 'بررسی آپدیت آنلاین' کلیک کنید. سیستم بدون نیاز به دانش فنی فایل EXE را به طور خودکار در بک‌گراند آپدیت و راه‌اندازی مجدد می‌کند."
+        "   - فایل را با دکمه انتخاب کنید یا مستقیم داخل کادر بکشید (Drag & Drop).\n"
+        "   - رمز عبور خود را وارد کرده و دکمه 'رمزگذاری فایل' را بزنید.\n\n"
+        "۳. سیستم آپدیت خودکار آنلاین:\n"
+        "   - از منوی اصلی روی 'بررسی آپدیت آنلاین' کلیک کنید. سیستم فایل EXE را به طور خودکار دانلود کرده، برنامه قدیمی را می‌بندد و جایگزین می‌کند."
     )
     text_area.insert("1.0", guide_text)
     text_area.config(state="disabled")
