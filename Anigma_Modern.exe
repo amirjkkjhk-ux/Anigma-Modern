@@ -2,7 +2,7 @@
 # EMAIL: amirjkkjhk@gmail.com
 # TELEGRAM ID: @Amirshoq
 # ====================================================================================
-# PROJECT: ANIGMA MODERN | VERSION: 15.4 (Complete Overhauled Architecture)
+# PROJECT: ANIGMA MODERN | VERSION: 15.8 (Final Golden Master Release)
 # ====================================================================================
 
 import tkinter as tk
@@ -20,14 +20,13 @@ import json
 import subprocess
 from datetime import datetime
 import urllib.request 
+import ssl 
 from Crypto.Cipher import AES 
 
 CONFIG_FILE = "config.json"
-CURRENT_VERSION = "15.4"
+CURRENT_VERSION = "15.8"
 
-# لینک‌های گیت‌هاب (دقت کن که در نسخه بعدی آدرس تگ تغییر می‌کند)
 VERSION_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/refs/heads/main/version.txt.txt"
-UPDATE_URL = f"https://github.com/amirjkkjhk-ux/Anigma-Modern/releases/download/v{CURRENT_VERSION}/Anigma_Modern.exe"
 
 LANGUAGES = {
     "fa": {
@@ -189,8 +188,11 @@ def apply_theme(theme_name):
     
     key_opt_frame.configure(bg=c["card"])
     show_key_btn.configure(bg=c["card"], fg=c["text"], selectcolor=c["input"], activebackground=c["card"], activeforeground=c["text"])
+    btn_copy_key = tk.Button(key_opt_frame, text="Copy", command=copy_key)
     btn_copy_key.configure(bg=c["btn_secondary"], fg="white")
+    btn_rand_key = tk.Button(key_opt_frame, command=generate_random_key)
     btn_rand_key.configure(bg=c["btn_secondary"], fg="white")
+    btn_key_manager = tk.Button(key_opt_frame, command=open_key_manager)
     btn_key_manager.configure(bg=c["btn_secondary"], fg="white")
     
     tab_text_frame.configure(bg=c["bg"])
@@ -281,8 +283,9 @@ def check_for_updates():
 
 def thread_update_logic():
     try:
+        ctx = ssl._create_unverified_context()
         req = urllib.request.Request(VERSION_URL, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=7) as response:
+        with urllib.request.urlopen(req, context=ctx, timeout=7) as response:
             latest_version = response.read().decode('utf-8').strip()
         if latest_version > CURRENT_VERSION:
             root.after(0, lambda: ask_for_download(latest_version))
@@ -291,7 +294,7 @@ def thread_update_logic():
             root.after(0, lambda: status_label.config(text=LANGUAGES[current_lang]["status_online"]))
     except Exception as e:
         error_msg = str(e)
-        root.after(0, lambda: messagebox.showerror("ERROR", f"خطا در اتصال به سرور گیت‌هاب:\n{error_msg}"))
+        root.after(0, lambda: messagebox.showerror("ERROR", f"خطا در اتصال به گیت‌هاب:\n{error_msg}"))
 
 def ask_for_download(new_version):
     msg = f"نسخه جدید {new_version} در دسترس است. آیا مایلید خودکار دانلود و نصب شود؟"
@@ -299,55 +302,60 @@ def ask_for_download(new_version):
         status_label.config(text="در حال دریافت فایل آپدیت...", fg="#ffa500")
         threading.Thread(target=lambda: thread_download_overhauled(new_version), daemon=True).start()
 
-# ساختار کاملاً جدید، پیوسته و بدون باگ فرآیند آپدیت
 def thread_download_overhauled(new_version):
     try:
-        # تغییر پویای آدرس بر اساس نسخه جدید کشف شده جهت پیشگیری از خطای آدرس ثابت
+        ctx = ssl._create_unverified_context()
         target_release_url = f"https://github.com/amirjkkjhk-ux/Anigma-Modern/releases/download/v{new_version}/Anigma_Modern.exe"
-        req = urllib.request.Request(target_release_url, headers={'User-Agent': 'Mozilla/5.0'})
         
+        try:
+            req_test = urllib.request.Request(target_release_url, headers={'User-Agent': 'Mozilla/5.0'}, method='HEAD')
+            with urllib.request.urlopen(req_test, context=ctx, timeout=10): pass
+        except urllib.error.HTTPError as he:
+            if he.code == 404:
+                raise Exception(f"(فایل باینری در سرور یافت نشد)\n\nآپلود v{new_version} ریلیز را در بخش Assets\nمطمئن شوید فایل 'Anigma_Modern.exe' را درست قرار داده‌اید.")
+        
+        req = urllib.request.Request(target_release_url, headers={'User-Agent': 'Mozilla/5.0'})
         current_exe_path = os.path.abspath(sys.argv[0])
         working_dir = os.path.dirname(current_exe_path)
         current_exe_name = os.path.basename(current_exe_path)
         
         if current_exe_path.endswith(".py"):
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, context=ctx, timeout=30) as response:
                 new_code = response.read()
             with open(current_exe_path, "wb") as f:
                 f.write(new_code)
             root.after(0, lambda: messagebox.showinfo("SUCCESS", "سورس پایتون با موفقیت آپدیت شد."))
             return
 
-        # دانلود مستقیم در یک فایل موقت برای عدم تداخل با پردازش جاری
         temp_new_exe = os.path.join(working_dir, "_patch_new_.exe")
-        with urllib.request.urlopen(req, timeout=60) as response:
+        with urllib.request.urlopen(req, context=ctx, timeout=60) as response:
+            downloaded_data = response.read()
+            if len(downloaded_data) < 100000: 
+                raise Exception("فایل دانلود شده ناقص یا نامعتبر است.")
             with open(temp_new_exe, "wb") as f:
-                f.write(response.read())
+                f.write(downloaded_data)
             
         bat_path = os.path.join(working_dir, "safe_installer.bat")
-        
-        # نوشتن اسکریپت بتچ فوق امنیتی: تلاش مکرر تا زمان آزاد شدن و بسته‌شدن کامل فایل قدیمی
         with open(bat_path, "w", encoding="utf-8") as b:
             b.write('@echo off\n')
-            b.write('title Anigma Modern Core Core Recovery\n')
+            b.write('title Anigma Modern Core Recovery\n')
             b.write(f'taskkill /f /im "{current_exe_name}" >nul 2>&1\n')
             b.write(':loop\n')
             b.write('timeout /t 1 /nobreak > nul\n')
             b.write(f'del /f /q "{current_exe_path}" >nul 2>&1\n')
-            b.write(f'if exist "{current_exe_path}" goto loop\n') # اگر هنوز حذف نشده یعنی قفل است، پس دوباره بچرخد
+            b.write(f'if exist "{current_exe_path}" goto loop\n') 
             b.write(f'move /y "_patch_new_.exe" "{current_exe_path}" >nul 2>&1\n')
             b.write(f'start "" "{current_exe_path}"\n')
             b.write('del "%~f0"\n')
             
-        root.after(0, lambda: messagebox.showinfo("DOWNLOAD OK", "فایل با موفقیت بازپیدایی شد. برنامه برای اعمال تغییرات ری‌استارت می‌شود."))
-        
+        root.after(0, lambda: messagebox.showinfo("DOWNLOAD OK", "فایل آپدیت با موفقیت دریافت شد. برنامه ری‌استارت می‌شود."))
         subprocess.Popen([bat_path], shell=True, cwd=working_dir, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
         root.quit()
         sys.exit(0)
         
     except Exception as e:
         error_msg = str(e)
-        root.after(0, lambda: messagebox.showerror("CRITICAL ERROR", f"خطای سیستمی در فرآیند ارتقا:\n{error_msg}"))
+        root.after(0, lambda: messagebox.showerror("CRITICAL ERROR", f"{error_msg}"))
 
 def open_help():
     help_window = tk.Toplevel(root)
