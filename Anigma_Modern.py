@@ -26,7 +26,8 @@ CONFIG_FILE = "config.json"
 CURRENT_VERSION = "15.0"
 
 VERSION_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/refs/heads/main/version.txt.txt"
-UPDATE_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/refs/heads/main/Anigma_Modern.py"
+# نکته: این لینک باید مستقیماً به فایل Anigma_Modern.exe کامپایل شده در گیت‌هاب اشاره کند
+UPDATE_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/refs/heads/main/Anigma_Modern.exe"
 
 LANGUAGES = {
     "fa": {
@@ -178,7 +179,6 @@ def apply_theme(theme_name):
     top_bar.configure(bg=c["bg"])
     protocol_label.configure(bg=c["bg"], fg=c["accent"])
     
-    # اصلاح دکمه منو: بازگرداندن متن سه خط و تنظیم دقیق رنگ فوکوس و پس‌زمینه
     menu_btn.configure(text="☰", bg=c["input"], fg=c["accent"], activebackground=c["input"], activeforeground=c["accent"])
     
     global_key_frame.configure(bg=c["card"])
@@ -281,7 +281,8 @@ def check_for_updates():
 
 def thread_update_logic():
     try:
-        with urllib.request.urlopen(VERSION_URL, timeout=4) as response:
+        req = urllib.request.Request(VERSION_URL, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=5) as response:
             latest_version = response.read().decode('utf-8').strip()
         if latest_version > CURRENT_VERSION:
             root.after(0, lambda: ask_for_download(latest_version))
@@ -299,37 +300,46 @@ def ask_for_download(new_version):
 
 def thread_download_new_version():
     try:
-        with urllib.request.urlopen(UPDATE_URL, timeout=20) as response:
-            new_code = response.read()
-            
+        req = urllib.request.Request(UPDATE_URL, headers={'User-Agent': 'Mozilla/5.0'})
         current_exe_or_py = os.path.abspath(sys.argv[0])
+        working_dir = os.path.dirname(current_exe_or_py)
         
+        # اگر سورس پایتون در حال اجراست
         if current_exe_or_py.endswith(".py"):
+            with urllib.request.urlopen(req, timeout=25) as response:
+                new_code = response.read()
             with open(current_exe_or_py, "wb") as f:
                 f.write(new_code)
-            root.after(0, lambda: messagebox.showinfo("SUCCESS", "برنامه با موفقیت آپدیت شد. لطفاً دوباره آن را باز کنید."))
+            root.after(0, lambda: messagebox.showinfo("SUCCESS", "سورس پایتون با موفقیت آپدیت شد."))
             return
             
-        temp_py = os.path.join(os.path.dirname(current_exe_or_py), "_update_hold_.py")
-        with open(temp_py, "wb") as f:
-            f.write(new_code)
+        # اگر فایل EXE در حال اجراست (دانلود مستقیم فایل کامپایل شده بدون نیاز به کمپایلر سیستم)
+        temp_new_exe = os.path.join(working_dir, "_new_version_.exe")
+        
+        with urllib.request.urlopen(req, timeout=40) as response:
+            with open(temp_new_exe, "wb") as f:
+                f.write(response.read())
             
-        bat_path = os.path.join(os.path.dirname(current_exe_or_py), "updater.bat")
+        bat_path = os.path.join(working_dir, "updater.bat")
+        
+        # ساخت یک اسکریپت جایگزینی مستقل بدون وابستگی به پوشه موقت AppData
         with open(bat_path, "w", encoding="utf-8") as b:
-            b.write(f'@echo off\n')
-            b.write(f'timeout /t 2 /nobreak > nul\n')
-            b.write(f'py -m PyInstaller --onefile --noconsole --collect-all tkinterdnd2 "{temp_py}"\n')
-            b.write(f'move /y "dist\\_update_hold_.exe" "{current_exe_or_py}"\n')
-            b.write(f'del "{temp_py}"\n')
+            b.write('@echo off\n')
+            b.write('timeout /t 2 /nobreak > nul\n')
+            b.write(f'cd /d "{working_dir}"\n')
+            b.write(f'del /f /q "{current_exe_or_py}"\n')
+            b.write(f'move /y "_new_version_.exe" "{current_exe_or_py}"\n')
             b.write(f'start "" "{current_exe_or_py}"\n')
-            b.write(f'del "%~f0"\n')
+            b.write('del "%~f0"\n')
             
-        root.after(0, lambda: messagebox.showinfo("EXE UPDATE", "کد جدید دانلود شد. فرآیند بهینه‌سازی فایل اجرایی آغاز می‌شود. برنامه بسته خواهد شد."))
-        subprocess.Popen([bat_path], shell=True)
+        root.after(0, lambda: messagebox.showinfo("EXE UPDATE", "نسخه جدید با موفقیت دانلود شد. برنامه جهت اعمال تغییرات بسته و مجدداً باز خواهد شد."))
+        
+        subprocess.Popen([bat_path], shell=True, cwd=working_dir, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
         root.quit()
+        sys.exit(0)
         
     except Exception as e:
-        root.after(0, lambda: messagebox.showerror("DOWNLOAD ERROR", f"خطا در نصب خودکار آپدیت:\n{e}"))
+        root.after(0, lambda: messagebox.showerror("DOWNLOAD ERROR", f"خطا در فرآیند جایگزینی فایل:\n{e}"))
 
 def open_help():
     help_window = tk.Toplevel(root)
@@ -493,7 +503,6 @@ style.theme_use('default')
 top_bar = tk.Frame(root)
 top_bar.pack(fill="x", padx=10, pady=5)
 
-# ایجاد اولیه دکمه منو با کاراکتر همرنگ پوسته
 menu_btn = tk.Button(top_bar, text="☰", font=("Segoe UI", 11, "bold"), bd=0)
 menu_btn.pack(side="left")
 
