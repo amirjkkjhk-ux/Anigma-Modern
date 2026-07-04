@@ -2,7 +2,7 @@
 # EMAIL: amirjkkjhk@gmail.com
 # TELEGRAM ID: @Amirshoq
 # ====================================================================================
-# PROJECT: ANIGMA MODERN | VERSION: 15.3 (Final Safety Update & Bug Fix)
+# PROJECT: ANIGMA MODERN | VERSION: 15.4 (Complete Overhauled Architecture)
 # ====================================================================================
 
 import tkinter as tk
@@ -23,11 +23,11 @@ import urllib.request
 from Crypto.Cipher import AES 
 
 CONFIG_FILE = "config.json"
-CURRENT_VERSION = "15.3"
+CURRENT_VERSION = "15.4"
 
-# لینک‌های گیت‌هاب (حتماً مطمئن شو v15.3 در Releases آپلود شده باشد)
+# لینک‌های گیت‌هاب (دقت کن که در نسخه بعدی آدرس تگ تغییر می‌کند)
 VERSION_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/refs/heads/main/version.txt.txt"
-UPDATE_URL = "https://github.com/amirjkkjhk-ux/Anigma-Modern/releases/download/v15.3/Anigma_Modern.exe"
+UPDATE_URL = f"https://github.com/amirjkkjhk-ux/Anigma-Modern/releases/download/v{CURRENT_VERSION}/Anigma_Modern.exe"
 
 LANGUAGES = {
     "fa": {
@@ -297,56 +297,57 @@ def ask_for_download(new_version):
     msg = f"نسخه جدید {new_version} در دسترس است. آیا مایلید خودکار دانلود و نصب شود؟"
     if messagebox.askyesno("NEW UPDATE AVAILABLE", msg):
         status_label.config(text="در حال دریافت فایل آپدیت...", fg="#ffa500")
-        threading.Thread(target=thread_download_new_version, daemon=True).start()
+        threading.Thread(target=lambda: thread_download_overhauled(new_version), daemon=True).start()
 
-def thread_download_new_version():
+# ساختار کاملاً جدید، پیوسته و بدون باگ فرآیند آپدیت
+def thread_download_overhauled(new_version):
     try:
-        req = urllib.request.Request(UPDATE_URL, headers={'User-Agent': 'Mozilla/5.0'})
-        current_exe_or_py = os.path.abspath(sys.argv[0])
-        working_dir = os.path.dirname(current_exe_or_py)
+        # تغییر پویای آدرس بر اساس نسخه جدید کشف شده جهت پیشگیری از خطای آدرس ثابت
+        target_release_url = f"https://github.com/amirjkkjhk-ux/Anigma-Modern/releases/download/v{new_version}/Anigma_Modern.exe"
+        req = urllib.request.Request(target_release_url, headers={'User-Agent': 'Mozilla/5.0'})
         
-        # اگر سورس پایتون در حال اجراست
-        if current_exe_or_py.endswith(".py"):
+        current_exe_path = os.path.abspath(sys.argv[0])
+        working_dir = os.path.dirname(current_exe_path)
+        current_exe_name = os.path.basename(current_exe_path)
+        
+        if current_exe_path.endswith(".py"):
             with urllib.request.urlopen(req, timeout=30) as response:
                 new_code = response.read()
-            with open(current_exe_or_py, "wb") as f:
+            with open(current_exe_path, "wb") as f:
                 f.write(new_code)
             root.after(0, lambda: messagebox.showinfo("SUCCESS", "سورس پایتون با موفقیت آپدیت شد."))
             return
-            
-        # اگر فایل EXE در حال اجراست (جایگزینی مستقل فایل کامپایل شده)
-        temp_new_exe = os.path.join(working_dir, "_new_version_.exe")
-        
-        # دانلود استریم جهت عدم ارور لودینگ فایل‌های سنگین باینری
+
+        # دانلود مستقیم در یک فایل موقت برای عدم تداخل با پردازش جاری
+        temp_new_exe = os.path.join(working_dir, "_patch_new_.exe")
         with urllib.request.urlopen(req, timeout=60) as response:
             with open(temp_new_exe, "wb") as f:
                 f.write(response.read())
             
-        bat_path = os.path.join(working_dir, "updater.bat")
-        current_exe_name = os.path.basename(current_exe_or_py)
+        bat_path = os.path.join(working_dir, "safe_installer.bat")
         
-        # اسکریپت بتچ اصلاح شد تا ابتدا با taskkill فرآیند فایل قفل شده را ببندد و سپس جایگزین کند
+        # نوشتن اسکریپت بتچ فوق امنیتی: تلاش مکرر تا زمان آزاد شدن و بسته‌شدن کامل فایل قدیمی
         with open(bat_path, "w", encoding="utf-8") as b:
             b.write('@echo off\n')
-            b.write('title Anigma Safe Updater\n')
-            b.write(f'taskkill /f /im "{current_exe_name}" >nul 2>&1\n') # بستن اجباری برنامه قبلی
-            b.write('timeout /t 3 /nobreak > nul\n')
-            b.write(f'cd /d "{working_dir}"\n')
-            b.write(f'if exist "{current_exe_name}" del /f /q "{current_exe_name}"\n') # حذف فایل لاک شده
-            b.write(f'if exist "_new_version_.exe" move /y "_new_version_.exe" "{current_exe_name}"\n') # جایگزینی
-            b.write(f'start "" "{current_exe_name}"\n') # اجرای برنامه جدید
-            b.write('del "%~f0"\n') # حذف خودupdater.bat
+            b.write('title Anigma Modern Core Core Recovery\n')
+            b.write(f'taskkill /f /im "{current_exe_name}" >nul 2>&1\n')
+            b.write(':loop\n')
+            b.write('timeout /t 1 /nobreak > nul\n')
+            b.write(f'del /f /q "{current_exe_path}" >nul 2>&1\n')
+            b.write(f'if exist "{current_exe_path}" goto loop\n') # اگر هنوز حذف نشده یعنی قفل است، پس دوباره بچرخد
+            b.write(f'move /y "_patch_new_.exe" "{current_exe_path}" >nul 2>&1\n')
+            b.write(f'start "" "{current_exe_path}"\n')
+            b.write('del "%~f0"\n')
             
-        root.after(0, lambda: messagebox.showinfo("EXE UPDATE", "دانلود کامل شد. برنامه تا لحظاتی دیگر به طور خودکار ری‌استارت می‌شود."))
+        root.after(0, lambda: messagebox.showinfo("DOWNLOAD OK", "فایل با موفقیت بازپیدایی شد. برنامه برای اعمال تغییرات ری‌استارت می‌شود."))
         
-        # اجرای پشت صحنه اسکریپت آپدیت
         subprocess.Popen([bat_path], shell=True, cwd=working_dir, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-        root.quit() # بستن فوری برنامه
+        root.quit()
         sys.exit(0)
         
     except Exception as e:
         error_msg = str(e)
-        root.after(0, lambda: messagebox.showerror("DOWNLOAD ERROR", f"خطا در دریافت فایل یا جایگذاری امن:\n{error_msg}"))
+        root.after(0, lambda: messagebox.showerror("CRITICAL ERROR", f"خطای سیستمی در فرآیند ارتقا:\n{error_msg}"))
 
 def open_help():
     help_window = tk.Toplevel(root)
