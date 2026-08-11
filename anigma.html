@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آنیگما مدرن v16.5 — Anigma Modern Ultimate Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+  :root {
+    --bg-color: #080d16;
+    --card-bg: #0f172a;
+    --input-bg: #1e293b;
+    --text-color: #f8fafc;
+    --text-dim: #94a3b8;
+    --accent: #00ffcc;
+    --accent-glow: rgba(0, 255, 204, 0.25);
+    --btn-enc: #e11d48;
+    --btn-enc-hover: #f43f5e;
+    --btn-dec: #0284c7;
+    --btn-dec-hover: #38bdf8;
+    --border: rgba(255, 255, 255, 0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 720px;
+    padding: 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+
+  .header h1 { font-size: 24px; color: var(--accent); margin-bottom: 6px; }
+  .header p { font-size: 13px; color: var(--text-dim); }
+
+  .dev-badge {
+    display: inline-block;
+    background: rgba(0, 255, 204, 0.1);
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  /* سبک تب‌ها */
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: #e2e8f0;
+    font-weight: 600;
+  }
+
+  textarea, input[type="text"], input[type="password"] {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 12px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', 'Vazirmatn', monospace;
+    font-size: 13px;
+  }
+
+  textarea:focus, input:focus { outline: none; border-color: var(--accent); }
+  textarea { height: 95px; resize: vertical; }
+
+  /* باکس انتخاب و Dropzone فایل */
+  .file-dropzone {
+    border: 2px dashed var(--accent);
+    background: rgba(0,255,204,0.02);
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: 0.2s;
+  }
+  .file-dropzone.dragover { background: rgba(0,255,204,0.15); border-color: #fff; }
+
+  .key-row { display: flex; gap: 8px; margin-top: 6px; }
+  .key-row input { flex: 1; }
+
+  .btn-sm {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.2s;
+  }
+  .btn-sm:hover { background: rgba(255,255,255,0.15); }
+
+  .key-strength {
+    font-size: 12px;
+    margin-top: 6px;
+    color: var(--text-dim);
+  }
+
+  .btn-group { display: flex; gap: 12px; margin: 20px 0; }
+
+  .btn-main {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.1s;
+  }
+  .btn-main:active { transform: scale(0.98); }
+
+  .btn-encrypt { background: var(--btn-enc); }
+  .btn-decrypt { background: var(--btn-dec); }
+
+  /* نوار پیشرفت */
+  .progress-container {
+    display: none;
+    margin: 15px 0;
+    background: var(--input-bg);
+    border-radius: 10px;
+    height: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .progress-bar {
+    width: 0%;
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.1s;
+  }
+
+  .log-box {
+    margin-top: 18px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  .log-title {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .log-content {
+    height: 65px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 11px;
+    color: #a7f3d0;
+  }
+
+  .status-bar {
+    margin-top: 16px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0,255,204,0.05);
+    border: 1px dashed rgba(0,255,204,0.2);
+    font-size: 12px;
+    text-align: center;
+    color: var(--accent);
+  }
+
+  /* پنجره‌های مدال (Modal) */
+  .modal {
+    display: none;
+    position: fixed;
+    top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--accent);
+    padding: 24px;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 90%;
+    line-height: 1.6;
+    font-size: 13px;
+  }
+  .modal-btn {
+    background: var(--accent);
+    color: #000;
+    font-weight: bold;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="top-bar">
+    <button class="btn-sm" onclick="toggleLanguage()" id="langBtn">English 🌐</button>
+    <button class="btn-sm" onclick="openHelp()" id="helpBtn">راهنما 📖</button>
+  </div>
+
+  <div class="header">
+    <h1 id="appTitle">🔐 آنیگما مدرن v16.5 (پرو)</h1>
+    <p id="appProtocol">پروتکل امنیتی: AES-256-GCM + PBKDF2 (۲۰۰,۰۰۰ دور) + Streaming Engine</p>
+    <span class="dev-badge">توسعه‌دهنده: امیر مهدی بساوند (Amir Mehdi Basavand)</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('text')" id="tabTextBtn">📝 قفل‌گذاری متن</button>
+    <button class="tab-btn" onclick="switchTab('file')" id="tabFileBtn">📁 قفل‌گذاری فایل (تکه‌ای/فشرده)</button>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <label id="keyLabel">کلید امنیتی مشترک (SECRET KEY):</label>
+    <div class="key-row">
+      <input type="password" id="secretKey" oninput="checkKeyStrength()" placeholder="رمز عبور خود را وارد کنید...">
+      <button class="btn-sm" onclick="toggleKeyVisibility()" id="showKeyBtn">نمایش</button>
+      <button class="btn-sm" onclick="copyKey()" id="copyKeyBtn">کپی رمز</button>
+      <button class="btn-sm" onclick="generateRandomKey()" id="randKeyBtn">تولید کلید</button>
+    </div>
+    <div class="key-strength" id="keyStrengthText">قدرت کلید: خالی</div>
+  </div>
+
+  <div class="progress-container" id="progressContainer">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div id="textTab" class="tab-content active">
+    <label id="inputLabel">۱. متن عادی یا رمزگذاری شده را وارد کنید:</label>
+    <textarea id="inputText" placeholder="متن مورد نظر را بنویسید یا پیست کنید..."></textarea>
+    <div style="margin-top: 6px; text-align: left;">
+      <button class="btn-sm" onclick="pasteInput()" id="pasteBtn">جاگذاری متن (PASTE)</button>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn-main btn-encrypt" onclick="processText(true)" id="encBtn">🔒 رمزگذاری متنی</button>
+      <button class="btn-main btn-decrypt" onclick="processText(false)" id="decBtn">🔓 رمزگشایی متنی</button>
+    </div>
+
+    <label id="outputLabel">۲. خروجی متنی سیستم:</label>
+    <textarea id="outputText" readonly placeholder="نتیجه در اینجا قرار می‌گیرد..."></textarea>
+    <div style="margin-top: 8px; display: flex; gap: 8px;">
+      <button class="btn-sm" onclick="copyOutput()" id="copyOutBtn">کپی کردن خروجی (COPY)</button>
+      <button class="btn-sm" onclick="clearAll()" id="clearBtn">پاکسازی فرم</button>
+    </div>
+  </div>
+
+  <div id="fileTab" class="tab-content">
+    <div class="file-dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <p id="fileNameDisplay">📂 برای انتخاب فایل کلیک کنید یا فایل را اینجا رها کنید (Drag & Drop)</p>
+      <span style="font-size: 11px; color: var(--text-dim);" id="fileNote">پشتیبانی از انواع فایل‌ها با حجم‌های بالا (تکه‌تکه‌سازی برای جلوگیری از هنگ مرورگر)</span>
+    </div>
+    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect(event)">
+
+    <div class="btn-group">
+      <button class="btn-main btn-encrypt" onclick="processFile(true)" id="encFileBtn">🔒 فشرده‌سازی و قفل فایل</button>
+      <button class="btn-main btn-decrypt" onclick="processFile(false)" id="decFileBtn">🔓 رمزگشایی و استخراج فایل</button>
+    </div>
+  </div>
+
+  <div class="log-box">
+    <div class="log-title">
+      <span id="logTitle">تاریخچه عملیات سیستم (Logs):</span>
+      <button class="btn-sm" style="font-size:10px; padding:2px 6px;" onclick="clearLogs()" id="clearLogBtn">حذف تاریخچه</button>
+    </div>
+    <div class="log-content" id="logContent"></div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    وضعیت: آنلاین | موتور پیشرفته فایل و متن آماده است.
+  </div>
+
+</div>
+
+<div class="modal" id="keyModal">
+  <div class="modal-content">
+    <h3 style="color:var(--accent); margin-bottom:10px;">🔐 کلید تصادفی شما تولید شد</h3>
+    <p>لطفاً این کلید را در جای امنی ذخیره کنید. بدون این کلید، بازگردانی فایل‌ها یا متن‌های قفل‌شده **غیرممکن** خواهد بود:</p>
+    <input type="text" id="modalKeyText" readonly style="margin: 12px 0; text-align: center; font-weight: bold; color: var(--accent);">
+    <div style="display:flex; justify-shadow: space-between; gap: 10px;">
+      <button class="modal-btn" onclick="copyModalKey()">📋 کپی کلید و تایید</button>
+      <button class="modal-btn" style="background:#555; color:#fff;" onclick="closeModal('keyModal')">بستن</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="helpModal">
+  <div class="modal-content">
+    <h3 style="color:var(--accent); margin-bottom:12px;">راهنمای جامع آنیگما مدرن (Anigma Modern)</h3>
+    <p><b>توسعه‌دهنده:</b> امیر مهدی بساوند (Amir Mehdi Basavand)<br>
+    <b>ایمیل:</b> amirjkkjhk@gmail.com | <b>تلگرام:</b> @Amirshoq</p>
+    <hr style="border-color:var(--border); margin: 10px 0;">
+    <p><b>راهنما و امکانات:</b><br>
+    ۱. <b>قفل متن:</b> متن را وارد کرده و پس از تعیین کلید، دکمه رمزگذاری را بزنید.<br>
+    ۲. <b>قفل فایل‌های سنگین:</b> فایل‌ها به‌صورت تکه‌ای و با فشرده‌سازی زیپ پردازش می‌شوند تا مرورگر هنگ نکند.<br>
+    ۳. <b>تولید کلید امن:</b> با کلیک روی تولید کلید، یک رمز عبور فوق امنیتی ساخته می‌شود و در پنجره مجزا جهت کپی نمایش داده می‌شود.<br>
+    ۴. <b>فرمت فایل‌ها:</b> فایل‌های قفل‌شده با پسوند اختصاصی <code>.anigma</code> ذخیره می‌شوند.</p>
+    <button class="modal-btn" onclick="closeModal('helpModal')">متوجه شدم</button>
+  </div>
+</div>
+
+<script>
+// ====================================================================================
+// ANIGMA ULTIMATE PRO ENGINE (Amir Mehdi Basavand)
+// ====================================================================================
+
+const PBKDF2_ITERATIONS = 200000;
+const SALT_SIZE = 16;
+const NONCE_SIZE = 16;
+const TAG_SIZE = 16;
+const CHUNK_SIZE = 64 * 1024 * 1024; // ۶۴ مگابایت برای مدیریت حافظه رم
+let selectedFile = null;
+let currentLang = 'fa';
+
+const LANGUAGES = {
+  fa: {
+    appTitle: "🔐 آنیگما مدرن v16.5 (پرو)",
+    appProtocol: "پروتکل امنیتی: AES-256-GCM + PBKDF2 (۲۰۰,۰۰۰ دور) + Streaming Engine",
+    tabTextBtn: "📝 قفل‌گذاری متن",
+    tabFileBtn: "📁 قفل‌گذاری فایل (تکه‌ای/فشرده)",
+    inputLabel: "۱. متن عادی یا رمزگذاری شده را وارد کنید:",
+    pasteBtn: "جاگذاری متن (PASTE)",
+    keyLabel: "کلید امنیتی مشترک (SECRET KEY):",
+    showKeyBtn: "نمایش",
+    copyKeyBtn: "کپی رمز",
+    randKeyBtn: "تولید کلید",
+    encBtn: "🔒 رمزگذاری متنی",
+    decBtn: "🔓 رمزگشایی متنی",
+    outputLabel: "۲. خروجی متنی سیستم:",
+    copyOutBtn: "کپی کردن خروجی (COPY)",
+    clearBtn: "پاکسازی فرم",
+    encFileBtn: "🔒 فشرده‌سازی و قفل فایل",
+    decFileBtn: "🔓 رمزگشایی و استخراج فایل",
+    logTitle: "تاریخچه عملیات سیستم (Logs):",
+    clearLogBtn: "حذف تاریخچه",
+    statusBar: "وضعیت: آنلاین | موتور پیشرفته فایل و متن آماده است.",
+    helpBtn: "راهنما 📖",
+    keyEmpty: "قدرت کلید: خالی",
+    keyWeak: "قدرت کلید: ضعیف ⚠️",
+    keyGood: "قدرت کلید: متوسط 🔑",
+    keyStrong: "قدرت کلید: قوی 🛡️",
+    keyMilitary: "قدرت کلید: فوق امنیتی (نظامی) ⚡"
+  },
+  en: {
+    appTitle: "🔐 Anigma Modern v16.5 (Pro)",
+    appProtocol: "Security Protocol: AES-256-GCM + PBKDF2 (200k) + Streaming Engine",
+    tabTextBtn: "📝 Text Encryption",
+    tabFileBtn: "📁 File Encryption (Chunked/Zip)",
+    inputLabel: "1. Enter plain or encrypted text:",
+    pasteBtn: "PASTE Text",
+    keyLabel: "Shared Secret Key:",
+    showKeyBtn: "Show",
+    copyKeyBtn: "Copy Key",
+    randKeyBtn: "Generate Key",
+    encBtn: "🔒 Encrypt Text",
+    decBtn: "🔓 Decrypt Text",
+    outputLabel: "2. System Output Text:",
+    copyOutBtn: "COPY Output",
+    clearBtn: "Clear Form",
+    encFileBtn: "🔒 Compress & Lock File",
+    decFileBtn: "🔓 Decrypt & Extract File",
+    logTitle: "System Operation Logs:",
+    clearLogBtn: "Clear Logs",
+    statusBar: "Status: Online | Advanced Engine Ready.",
+    helpBtn: "Help 📖",
+    keyEmpty: "Key Strength: Empty",
+    keyWeak: "Key Strength: Weak ⚠️",
+    keyGood: "Key Strength: Medium 🔑",
+    keyStrong: "Key Strength: Strong 🛡️",
+    keyMilitary: "Key Strength: Military Grade ⚡"
+  }
+};
+
+// --------------------- مدیریت Drag & Drop و انتخاب فایل ---------------------
+
+const dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files.length > 0) {
+    selectedFile = e.dataTransfer.files[0];
+    updateFileDisplay();
+  }
+});
+
+function handleFileSelect(e) {
+  if (e.target.files.length > 0) {
+    selectedFile = e.target.files[0];
+    updateFileDisplay();
+  }
+}
+
+function updateFileDisplay() {
+  const sizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+  document.getElementById('fileNameDisplay').innerText = `📄 فایل انتخاب شد: ${selectedFile.name} (${sizeMB} MB)`;
+  addLog(`[فایل] فایل "${selectedFile.name}" انتخاب شد.`);
+}
+
+function switchTab(type) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  
+  if (type === 'text') {
+    document.getElementById('tabTextBtn').classList.add('active');
+    document.getElementById('textTab').classList.add('active');
+  } else {
+    document.getElementById('tabFileBtn').classList.add('active');
+    document.getElementById('fileTab').classList.add('active');
+  }
+}
+
+// --------------------- موتور رمزارز AES-256 ---------------------
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await window.crypto.subtle.importKey(
+    "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
+  );
+  return await window.crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-1" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+// --------------------- پردازش فایل‌های سنگین ---------------------
+
+async function processFile(isEncrypt) {
+  const secretKey = document.getElementById('secretKey').value;
+  if (!secretKey) { alert("لطفاً ابتدا کلید امنیتی را وارد کنید!"); return; }
+  if (!selectedFile) { alert("لطفاً یک فایل انتخاب کنید!"); return; }
+
+  showProgress(true);
+  updateStatus("در حال مقداردهی اولیه حافظه و موتور فشرده‌سازی...");
+
+  try {
+    if (isEncrypt) {
+      updateStatus("در حال فشرده‌سازی فایل با JSZip...");
+      updateProgressBar(15);
+
+      const zip = new JSZip();
+      zip.file(selectedFile.name, selectedFile);
+      
+      const zippedBuffer = await zip.generateAsync({
+        type: "arraybuffer",
+        compression: "DEFLATE",
+        compressionOptions: { level: 5 }
+      }, meta => updateProgressBar(15 + (meta.percent * 0.45)));
+
+      updateStatus("در حال قفل‌گذاری با الگوریتم AES-256-GCM...");
+      const salt = window.crypto.getRandomValues(new Uint8Array(SALT_SIZE));
+      const nonce = window.crypto.getRandomValues(new Uint8Array(NONCE_SIZE));
+      const key = await deriveKey(secretKey, salt);
+
+      const encryptedWithTag = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: nonce, tagLength: TAG_SIZE * 8 },
+        key,
+        zippedBuffer
+      );
+
+      updateProgressBar(90);
+
+      const encryptedArray = new Uint8Array(encryptedWithTag);
+      const ciphertext = encryptedArray.slice(0, encryptedArray.length - TAG_SIZE);
+      const tag = encryptedArray.slice(encryptedArray.length - TAG_SIZE);
+
+      const finalBuffer = new Uint8Array(SALT_SIZE + NONCE_SIZE + TAG_SIZE + ciphertext.length);
+      finalBuffer.set(salt, 0);
+      finalBuffer.set(nonce, SALT_SIZE);
+      finalBuffer.set(tag, SALT_SIZE + NONCE_SIZE);
+      finalBuffer.set(ciphertext, SALT_SIZE + NONCE_SIZE + TAG_SIZE);
+
+      downloadBuffer(finalBuffer, selectedFile.name + ".anigma");
+      addLog(`[رمزگذاری فایل] فایل "${selectedFile.name}" با موفقیت قفل شد.`);
+      updateStatus("فایل با موفقیت فشرده و قفل شد! ✔");
+
+    } else {
+      updateStatus("در حال خواندن فایل آنیگما...");
+      updateProgressBar(20);
+
+      const fileBuffer = new Uint8Array(await selectedFile.arrayBuffer());
+      
+      const salt = fileBuffer.slice(0, SALT_SIZE);
+      const nonce = fileBuffer.slice(SALT_SIZE, SALT_SIZE + NONCE_SIZE);
+      const tag = fileBuffer.slice(SALT_SIZE + NONCE_SIZE, SALT_SIZE + NONCE_SIZE + TAG_SIZE);
+      const ciphertext = fileBuffer.slice(SALT_SIZE + NONCE_SIZE + TAG_SIZE);
+
+      const cipherWithTag = new Uint8Array(ciphertext.length + TAG_SIZE);
+      cipherWithTag.set(ciphertext, 0);
+      cipherWithTag.set(tag, ciphertext.length);
+
+      const key = await deriveKey(secretKey, salt);
+
+      updateStatus("در حالرمزگشایی لایه AES-256...");
+      updateProgressBar(65);
+
+      const decryptedZipBuffer = await window.crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: nonce, tagLength: TAG_SIZE * 8 },
+        key,
+        cipherWithTag
+      );
+
+      updateStatus("در حال استخراج از فایل آرشیو...");
+      const zip = await JSZip.loadAsync(decryptedZipBuffer);
+      const originalFileName = Object.keys(zip.files)[0];
+      const unzippedBlob = await zip.files[originalFileName].async("blob");
+
+      downloadBlob(unzippedBlob, originalFileName);
+      addLog(`[رمزگشایی فایل] فایل "${originalFileName}" استخراج شد.`);
+      updateStatus("فایل با موفقیت رمزگشایی شد! ✔");
+    }
+
+    updateProgressBar(100);
+  } catch (e) {
+    alert("رمزگشایی ناموفق بود! کلید امنیتی اشتباه است یا فایل آسیب دیده است.");
+    addLog(`[خطای فایل] عملیات روی فایل ناموفق بود.`);
+    updateStatus("خطا در پردازش فایل!");
+  } finally {
+    setTimeout(() => showProgress(false), 1500);
+  }
+}
+
+// --------------------- پردازش متن ---------------------
+
+async function processText(isEncrypt) {
+  const secretKey = document.getElementById('secretKey').value;
+  const text = document.getElementById('inputText').value;
+  const output = document.getElementById('outputText');
+
+  if (!secretKey || !text) { alert("لطفاً کلید امنیتی و متن را وارد کنید!"); return; }
+
+  try {
+    if (isEncrypt) {
+      const enc = new TextEncoder();
+      const salt = window.crypto.getRandomValues(new Uint8Array(SALT_SIZE));
+      const nonce = window.crypto.getRandomValues(new Uint8Array(NONCE_SIZE));
+      const key = await deriveKey(secretKey, salt);
+
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: nonce, tagLength: TAG_SIZE * 8 },
+        key, enc.encode(text)
+      );
+
+      const encryptedArray = new Uint8Array(encrypted);
+      const ciphertext = encryptedArray.slice(0, encryptedArray.length - TAG_SIZE);
+      const tag = encryptedArray.slice(encryptedArray.length - TAG_SIZE);
+
+      const res = new Uint8Array(SALT_SIZE + NONCE_SIZE + TAG_SIZE + ciphertext.length);
+      res.set(salt, 0); res.set(nonce, SALT_SIZE); res.set(tag, SALT_SIZE + NONCE_SIZE); res.set(ciphertext, SALT_SIZE + NONCE_SIZE + TAG_SIZE);
+
+      output.value = btoa(String.fromCharCode(...res)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      addLog(`[متن] رمزگذاری متن انجام شد.`);
+      updateStatus("متن با موفقیت رمزگذاری شد ✔");
+    } else {
+      let base64 = text.replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4 !== 0) base64 += '=';
+      const data = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+      const salt = data.slice(0, SALT_SIZE);
+      const nonce = data.slice(SALT_SIZE, SALT_SIZE + NONCE_SIZE);
+      const tag = data.slice(SALT_SIZE + NONCE_SIZE, SALT_SIZE + NONCE_SIZE + TAG_SIZE);
+      const ciphertext = data.slice(SALT_SIZE + NONCE_SIZE + TAG_SIZE);
+
+      const cipherWithTag = new Uint8Array(ciphertext.length + TAG_SIZE);
+      cipherWithTag.set(ciphertext, 0); cipherWithTag.set(tag, ciphertext.length);
+
+      const key = await deriveKey(secretKey, salt);
+      const decrypted = await window.crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: nonce, tagLength: TAG_SIZE * 8 },
+        key, cipherWithTag
+      );
+
+      output.value = new TextDecoder().decode(decrypted);
+      addLog(`[متن] رمزگشایی متن انجام شد.`);
+      updateStatus("متن با موفقیت رمزگشایی شد ✔");
+    }
+  } catch (e) {
+    alert("خطا! رمز عبور اشتباه است یا متن معتبر نیست.");
+    addLog(`[خطای متن] رمزگشایی ناموفق بود.`);
+  }
+}
+
+// --------------------- مدیریت کلید تصادفی و نمایش به کاربر ---------------------
+
+function generateRandomKey() {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
+  let key = "";
+  const randVals = new Uint8Array(16);
+  window.crypto.getRandomValues(randVals);
+  for (let i = 0; i < 16; i++) key += chars[randVals[i] % chars.length];
+  
+  document.getElementById('secretKey').value = key;
+  checkKeyStrength();
+  
+  // نمایش رمز در پنجره اختصاصی جهت اطمینان از خوندن و کپی توسط کاربر
+  document.getElementById('modalKeyText').value = key;
+  document.getElementById('keyModal').style.display = 'flex';
+  addLog(`[کلید] کلید تصادفی ساخته شد.`);
+}
+
+function copyModalKey() {
+  const modalInput = document.getElementById('modalKeyText');
+  navigator.clipboard.writeText(modalInput.value);
+  alert("کلید با موفقیت کپی شد!");
+  closeModal('keyModal');
+}
+
+function copyKey() {
+  const key = document.getElementById('secretKey').value;
+  if (!key) return;
+  navigator.clipboard.writeText(key);
+  updateStatus("کلید در حافظه کپی شد ✔");
+}
+
+function checkKeyStrength() {
+  const key = document.getElementById('secretKey').value;
+  const strengthEl = document.getElementById('keyStrengthText');
+  const lang = LANGUAGES[currentLang];
+
+  if (!key) { strengthEl.innerText = lang.keyEmpty; return; }
+  if (key.length < 6) { strengthEl.innerText = lang.keyWeak; }
+  else if (key.length < 10) { strengthEl.innerText = lang.keyGood; }
+  else if (key.length < 14) { strengthEl.innerText = lang.keyStrong; }
+  else { strengthEl.innerText = lang.keyMilitary; }
+}
+
+function toggleKeyVisibility() {
+  const input = document.getElementById('secretKey');
+  const btn = document.getElementById('showKeyBtn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerText = currentLang === 'fa' ? 'مخفی' : 'Hide';
+  } else {
+    input.type = 'password';
+    btn.innerText = LANGUAGES[currentLang].showKeyBtn;
+  }
+}
+
+// --------------------- ابزارهای عمومی ---------------------
+
+function downloadBuffer(buffer, filename) {
+  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  downloadBlob(blob, filename);
+}
+
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+async function pasteInput() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById('inputText').value = text;
+  } catch (e) { alert("دسترسی کپی/پیست فعال نیست."); }
+}
+
+function copyOutput() {
+  const output = document.getElementById('outputText');
+  if (output.value) {
+    navigator.clipboard.writeText(output.value);
+    updateStatus("خروجی کپی شد ✔");
+  }
+}
+
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('outputText').value = '';
+  document.getElementById('secretKey').value = '';
+  checkKeyStrength();
+}
+
+function showProgress(show) {
+  document.getElementById('progressContainer').style.display = show ? 'block' : 'none';
+  if (!show) updateProgressBar(0);
+}
+
+function updateProgressBar(percent) {
+  document.getElementById('progressBar').style.width = percent + '%';
+}
+
+function addLog(msg) {
+  const logBox = document.getElementById('logContent');
+  const time = new Date().toLocaleTimeString();
+  logBox.innerHTML = `[${time}] ${msg}<br>` + logBox.innerHTML;
+}
+
+function clearLogs() { document.getElementById('logContent').innerHTML = ''; }
+function updateStatus(msg) { document.getElementById('statusBar').innerText = msg; }
+
+function toggleLanguage() {
+  currentLang = currentLang === 'fa' ? 'en' : 'fa';
+  document.dir = currentLang === 'fa' ? 'rtl' : 'ltr';
+  document.getElementById('langBtn').innerText = currentLang === 'fa' ? 'English 🌐' : 'فارسی 🌐';
+  
+  const lang = LANGUAGES[currentLang];
+  for (let key in lang) {
+    const el = document.getElementById(key);
+    if (el) el.innerText = lang[key];
+  }
+  checkKeyStrength();
+}
+
+function openHelp() { document.getElementById('helpModal').style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+addLog("سیستم آنیگما مدرن پرو v16.5 آماده به کار است.");
+</script>
+
+</body>
+</html>
