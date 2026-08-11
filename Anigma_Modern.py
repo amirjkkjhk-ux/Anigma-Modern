@@ -42,7 +42,7 @@ LANGUAGES = {
     "fa": {
         "title": f"ANIGMA MODERN PRO v{CURRENT_VERSION}",
         "protocol": "پروتکل: AES-256 + Zlib Engine",
-        "settings_menu": "☰ تنظیمات",
+        "key_guide": "راهنما: یک کلید امنیتی دلخواه وارد کنید یا کلید تصادفی بسازید. برای رمزگذاری و رمزگشایی دقیقاً به همین کلید نیاز دارید.",
         "tab_text": "قفل‌گذاری متنی",
         "tab_file": "قفل‌گذاری فایل",
         "input_label": "۱. متن اصلی یا رمزگذاری شده را وارد کنید:",
@@ -94,12 +94,12 @@ LANGUAGES = {
         "help_usage_title": "آموزش نحوه استفاده",
         "help_usage_text": "۱. قفل‌گذاری متنی:\n - کلید امنیتی خود را در بخش مربوطه وارد کرده یا روی کلید تصادفی کلیک کنید.\n - متن را در ورودی قرار داده و دکمه رمزگذاری متنی را بزنید.\n - برای رمزگشایی، متن رمز شده را وارد کرده و با همان کلید، دکمه رمزگشایی متنی را فشارد دهید.\n\n۲. قفل‌گذاری فایل:\n - فایل مورد نظر را Drag & Drop کنید یا از دکمه انتخاب فایل استفاده نمایید.\n - کلید امنیتی را مشخص کرده و دکمه رمزگذاری فایل را بزنید.\n - پسوند فایل رمز شده .anigma خواهد بود.",
         "changelog_title": "تغییرات آخرین آپدیت (v17.5)",
-        "changelog_text": "- بازگرداندن متن «تنظیمات» به منوی همبرگری (☰ تنظیمات)\n- ارتقا و مدرن‌سازی کامل ظاهر برنامه‌ و استفاده از فونت‌های شیک دسکتاپی\n- حذف متن راهنمای بالای رمز جهت خلوت‌تر شدن ظاهر UI\n- اضافه شدن سربرگ و متن راهنمای شفاف در بخش مدیریت کلیدها\n- بهبود منوها، کادرها و دکمه‌های اکشن به همراه افکت‌های نئونی"
+        "changelog_text": "- حذف کامل تمامی ایموجی‌ها و استیکرها جهت یکپارچگی رابط کاربری\n- افزودن متن راهنمای اختصاصی در بخش کلید امنیتی\n- تغییر و بازنویسی کامل بخش راهنمای برنامه و آموزش جامع استفاده\n- اضافه شدن بخش گزارش تغییرات آپدیت جدید به منوی اصلی\n- بهینه‌سازی سیستم ترجمه و تغییر زبان کاملاً همزمان تمام اجزای رابط کاربری\n- ارتقای پایداری موتور رمزنگاری AES-GCM و فشرده‌سازی Zlib"
     },
     "en": {
         "title": f"ANIGMA MODERN PRO v{CURRENT_VERSION}",
         "protocol": "PROTOCOL: AES-256 + Zlib ENGINE",
-        "settings_menu": "☰ Settings",
+        "key_guide": "Guide: Enter a custom secret key or generate a random one. You will need this exact key for both encryption and decryption.",
         "tab_text": "Text Vault",
         "tab_file": "File Vault",
         "input_label": "1. Enter Plain text or Cipher text:",
@@ -151,7 +151,7 @@ LANGUAGES = {
         "help_usage_title": "How to Use",
         "help_usage_text": "1. Text Encryption:\n - Enter a secret key or generate a random key.\n - Type or paste your message into the input field and press Encrypt Text.\n - To decrypt, paste the cipher text, enter the exact key, and press Decrypt Text.\n\n2. File Encryption:\n - Drag and drop a file or click Select File.\n - Enter your secret key and press Encrypt File.\n - The encrypted file will have a .anigma extension.",
         "changelog_title": "Latest Update Changelog (v17.5)",
-        "changelog_text": "- Restored 'Settings' text with hamburger icon (☰ Settings).\n- Upgraded UI font styling to modern desktop standard fonts.\n- Cleaned up Secret Key area by removing top instruction text.\n- Added header and instruction guide to Key Manager popup.\n- Revamped dark neon style with improved borders, padding, and layout structure."
+        "changelog_text": "- Completely removed all emojis and icons for a clean, professional user interface.\n- Added a dedicated instruction label in the Secret Key section.\n- Fully revamped and detailed user guide with comprehensive application overview and step-by-step instructions.\n- Added Latest Update Changelog modal window to the main settings menu.\n- Enhanced language translation system for instant UI text updates.\n- Optimized AES-GCM cryptographic engine and Zlib compression routines."
     }
 }
 
@@ -169,12 +169,6 @@ THEMES = {
         "muted": "#8b949e"
     }
 }
-
-# تنظیم فونت اصلی برنامه
-FONT_MAIN = ("Segoe UI", 9)
-FONT_BOLD = ("Segoe UI", 9, "bold")
-FONT_TITLE = ("Segoe UI", 10, "bold")
-FONT_CODE = ("Consolas", 9, "bold")
 
 current_lang = "fa"
 current_theme = "night"
@@ -271,50 +265,51 @@ def apply_theme():
     c = THEMES["night"]
     root.configure(bg=c["bg"])
     top_bar.configure(bg=c["bg"])
-    protocol_label.configure(bg=c["bg"], fg=c["accent"], font=FONT_BOLD)
-    menu_btn.configure(bg=c["card"], fg=c["accent"], activebackground=c["input"], activeforeground=c["accent"], font=FONT_BOLD)
+    protocol_label.configure(bg=c["bg"], fg=c["accent"])
+    menu_btn.configure(bg=c["input"], fg=c["accent"], activebackground=c["input"], activeforeground=c["accent"])
     
     global_key_frame.configure(bg=c["card"], highlightbackground=c["card_border"], highlightthickness=1)
+    lbl_key_header_guide.configure(bg=c["card"], fg=c["muted"])
     key_title_frame.configure(bg=c["card"])
-    lbl_key.configure(bg=c["card"], fg=c["text"], font=FONT_BOLD)
-    strength_label.configure(bg=c["card"], font=FONT_BOLD)
-    key_entry.configure(bg=c["input"], fg=c["accent"], insertbackground=c["accent"], font=FONT_CODE)
+    lbl_key.configure(bg=c["card"], fg=c["text"])
+    strength_label.configure(bg=c["card"])
+    key_entry.configure(bg=c["input"], fg=c["accent"], insertbackground=c["accent"])
     
     key_opt_frame.configure(bg=c["card"])
-    show_key_btn.configure(bg=c["card"], fg=c["text"], selectcolor=c["input"], activebackground=c["card"], activeforeground=c["text"], font=FONT_MAIN)
-    btn_copy_key.configure(bg=c["btn_dark"], fg="white", font=FONT_MAIN)
-    btn_rand_key.configure(bg=c["btn_secondary"], fg="white", font=FONT_BOLD)
-    btn_key_manager.configure(bg=c["btn_dark"], fg="white", font=FONT_MAIN)
+    show_key_btn.configure(bg=c["card"], fg=c["text"], selectcolor=c["input"], activebackground=c["card"], activeforeground=c["text"])
+    btn_copy_key.configure(bg=c["btn_dark"], fg="white")
+    btn_rand_key.configure(bg=c["btn_secondary"], fg="white")
+    btn_key_manager.configure(bg=c["btn_dark"], fg="white")
     
     tab_text_frame.configure(bg=c["card"])
     tab_file_frame.configure(bg=c["card"])
-    lbl_input.configure(bg=c["card"], fg=c["text"], font=FONT_BOLD)
-    text_entry.configure(bg=c["input"], fg="#ffffff", insertbackground="white", font=FONT_MAIN)
-    btn_paste.configure(bg=c["btn_dark"], fg=c["accent"], font=FONT_BOLD)
+    lbl_input.configure(bg=c["card"], fg=c["text"])
+    text_entry.configure(bg=c["input"], fg="#ffffff", insertbackground="white")
+    btn_paste.configure(bg=c["btn_dark"], fg=c["accent"])
     btn_frame.configure(bg=c["card"])
-    encrypt_btn.configure(bg=c["btn_primary"], fg="white", font=FONT_BOLD)
-    decrypt_btn.configure(bg=c["btn_secondary"], fg="white", font=FONT_BOLD)
-    clear_btn.configure(bg=c["btn_dark"], fg="white", font=FONT_MAIN)
-    lbl_output.configure(bg=c["card"], fg=c["text"], font=FONT_BOLD)
-    result_entry.configure(bg=c["input"], fg=c["accent"], insertbackground="white", font=FONT_CODE)
-    btn_copy_output.configure(bg="#238636", fg="white", font=FONT_BOLD)
+    encrypt_btn.configure(bg=c["btn_primary"], fg="white")
+    decrypt_btn.configure(bg=c["btn_secondary"], fg="white")
+    clear_btn.configure(bg=c["btn_dark"], fg="white")
+    lbl_output.configure(bg=c["card"], fg=c["text"])
+    result_entry.configure(bg=c["input"], fg=c["accent"], insertbackground="white")
+    btn_copy_output.configure(bg="#238636", fg="white")
     
-    lbl_file.configure(bg=c["card"], fg=c["text"], font=FONT_BOLD)
+    lbl_file.configure(bg=c["card"], fg=c["text"])
     drop_zone_box.configure(bg=c["input"], fg=c["accent"])
-    btn_select_file.configure(bg=c["card"], fg=c["accent"], font=FONT_BOLD)
-    lbl_file_status.configure(bg=c["input"], font=FONT_MAIN)
+    btn_select_file.configure(bg=c["card"], fg=c["accent"])
+    lbl_file_status.configure(bg=c["input"])
     file_btn_frame.configure(bg=c["card"])
-    btn_enc_file.configure(bg=c["btn_primary"], fg="white", font=FONT_BOLD)
-    btn_dec_file.configure(bg=c["btn_secondary"], fg="white", font=FONT_BOLD)
+    btn_enc_file.configure(bg=c["btn_primary"], fg="white")
+    btn_dec_file.configure(bg=c["btn_secondary"], fg="white")
     
     log_title_frame.configure(bg=c["bg"])
-    lbl_log.configure(bg=c["bg"], fg=c["muted"], font=FONT_BOLD)
-    btn_clear_log.configure(bg=c["btn_dark"], fg="white", font=FONT_MAIN)
-    log_box.configure(bg="#010409", fg=c["accent"], font=("Consolas", 8))
-    status_label.configure(bg=c["bg"], fg=c["accent"], font=FONT_MAIN)
+    lbl_log.configure(bg=c["bg"], fg=c["muted"])
+    btn_clear_log.configure(bg=c["btn_dark"], fg="white")
+    log_box.configure(bg="#010409", fg=c["accent"])
+    status_label.configure(bg=c["bg"], fg=c["accent"])
     
     style.configure("TNotebook", background=c["bg"], borderwidth=0)
-    style.configure("TNotebook.Tab", background=c["card"], foreground=c["text"], padding=[15, 6], font=FONT_BOLD)
+    style.configure("TNotebook.Tab", background=c["card"], foreground=c["text"], padding=[15, 6], font=("Vazirmatn", 9, "bold"))
     style.map("TNotebook.Tab", background=[("selected", c["accent"])], foreground=[("selected", "#000000")])
     style.configure("Horizontal.TProgressbar", troughcolor=c["input"], background=c["accent"])
     update_file_label()
@@ -343,8 +338,8 @@ def clear_logs_action():
     status_label.config(text="تاریخچه پاکسازی شد" if current_lang == "fa" else "Logs cleared", fg="green")
 
 def update_log_button_ui():
-    if logs_enabled: btn_toggle_log.config(text=LANGUAGES[current_lang]["log_active"], bg="#238636", fg="white", font=FONT_MAIN)
-    else: btn_toggle_log.config(text=LANGUAGES[current_lang]["log_inactive"], bg="#da3633", fg="white", font=FONT_MAIN)
+    if logs_enabled: btn_toggle_log.config(text=LANGUAGES[current_lang]["log_active"], bg="#238636", fg="white")
+    else: btn_toggle_log.config(text=LANGUAGES[current_lang]["log_inactive"], bg="#da3633", fg="white")
 
 def change_language(lang):
     global current_lang
@@ -352,7 +347,7 @@ def change_language(lang):
     save_config_file()
     root.title(LANGUAGES[lang]["title"])
     protocol_label.config(text=LANGUAGES[lang]["protocol"])
-    menu_btn.config(text=LANGUAGES[lang]["settings_menu"])
+    lbl_key_header_guide.config(text=LANGUAGES[lang]["key_guide"])
     notebook.tab(tab_text_frame, text=LANGUAGES[lang]["tab_text"])
     notebook.tab(tab_file_frame, text=LANGUAGES[lang]["tab_file"])
     lbl_input.config(text=LANGUAGES[lang]["input_label"])
@@ -437,26 +432,26 @@ def open_help():
     help_window.configure(bg=c["card"])
     
     # اطلاعات سازنده
-    title_frame = tk.LabelFrame(help_window, text=f" {LANGUAGES[current_lang]['help_dev_info']} ", bg=c["card"], fg=c["accent"], font=FONT_TITLE)
+    title_frame = tk.LabelFrame(help_window, text=f" {LANGUAGES[current_lang]['help_dev_info']} ", bg=c["card"], fg=c["accent"], font=("Vazirmatn", 10, "bold"))
     title_frame.pack(fill="x", padx=15, pady=8)
     
-    tk.Label(title_frame, text="امیر مهدی بساوند (Amir Mehdi Basavand)", bg=c["card"], fg=c["btn_primary"], font=FONT_BOLD).pack(pady=2)
-    tk.Label(title_frame, text="ایمیل: amirjkkjhk@gmail.com | تلگرام: @Amirshoq", bg=c["card"], fg="gray", font=FONT_CODE).pack(pady=2)
+    tk.Label(title_frame, text="امیر مهدی بساوند (Amir Mehdi Basavand)", bg=c["card"], fg=c["btn_primary"], font=("Vazirmatn", 10, "bold")).pack(pady=2)
+    tk.Label(title_frame, text="ایمیل: amirjkkjhk@gmail.com | تلگرام: @Amirshoq", bg=c["card"], fg="gray", font=("Consolas", 9)).pack(pady=2)
 
     # معرفی کامل برنامه
-    intro_frame = tk.LabelFrame(help_window, text=f" {LANGUAGES[current_lang]['help_app_intro_title']} ", bg=c["card"], fg=c["accent"], font=FONT_TITLE)
+    intro_frame = tk.LabelFrame(help_window, text=f" {LANGUAGES[current_lang]['help_app_intro_title']} ", bg=c["card"], fg=c["accent"], font=("Vazirmatn", 10, "bold"))
     intro_frame.pack(fill="x", padx=15, pady=6)
     
-    intro_text = tk.Text(intro_frame, bg=c["input"], fg="white", wrap="word", font=FONT_MAIN, bd=0, height=5)
+    intro_text = tk.Text(intro_frame, bg=c["input"], fg="white", wrap="word", font=("Vazirmatn", 9), bd=0, height=5)
     intro_text.pack(fill="both", expand=True, padx=5, pady=5)
     intro_text.insert("1.0", LANGUAGES[current_lang]["help_app_intro_text"])
     intro_text.config(state="disabled")
 
     # آموزش نحوه استفاده
-    guide_frame = tk.LabelFrame(help_window, text=f" {LANGUAGES[current_lang]['help_usage_title']} ", bg=c["card"], fg=c["accent"], font=FONT_TITLE)
+    guide_frame = tk.LabelFrame(help_window, text=f" {LANGUAGES[current_lang]['help_usage_title']} ", bg=c["card"], fg=c["accent"], font=("Vazirmatn", 10, "bold"))
     guide_frame.pack(fill="both", expand=True, padx=15, pady=8)
     
-    guide_text = tk.Text(guide_frame, bg=c["input"], fg="white", wrap="word", font=FONT_MAIN, bd=0)
+    guide_text = tk.Text(guide_frame, bg=c["input"], fg="white", wrap="word", font=("Vazirmatn", 9), bd=0)
     guide_text.pack(fill="both", expand=True, padx=5, pady=5)
     guide_text.insert("1.0", LANGUAGES[current_lang]["help_usage_text"])
     guide_text.config(state="disabled")
@@ -468,10 +463,10 @@ def open_changelog():
     c = THEMES["night"]
     changelog_window.configure(bg=c["card"])
     
-    frame = tk.LabelFrame(changelog_window, text=f" {LANGUAGES[current_lang]['changelog_title']} ", bg=c["card"], fg=c["accent"], font=FONT_TITLE)
+    frame = tk.LabelFrame(changelog_window, text=f" {LANGUAGES[current_lang]['changelog_title']} ", bg=c["card"], fg=c["accent"], font=("Vazirmatn", 10, "bold"))
     frame.pack(fill="both", expand=True, padx=15, pady=12)
     
-    text_area = tk.Text(frame, bg=c["input"], fg="white", wrap="word", font=FONT_MAIN, bd=0)
+    text_area = tk.Text(frame, bg=c["input"], fg="white", wrap="word", font=("Vazirmatn", 9), bd=0)
     text_area.pack(fill="both", expand=True, padx=8, pady=8)
     text_area.insert("1.0", LANGUAGES[current_lang]["changelog_text"])
     text_area.config(state="disabled")
@@ -488,8 +483,6 @@ def open_key_manager():
             saved_keys[n] = v
             persist_saved_keys()
             refresh_list()
-            name_entry.delete(0, tk.END)
-            val_entry.delete(0, tk.END)
             add_log(f"Key saved: '{n}'")
     def delete_key():
         try:
@@ -513,32 +506,22 @@ def open_key_manager():
 
     c = THEMES["night"]
     manager_win = tk.Toplevel(root)
-    manager_win.geometry("420x460")
+    manager_win.geometry("380x420")
     manager_win.title("مدیریت کلیدها" if current_lang == "fa" else "Key Manager")
     manager_win.configure(bg=c["card"])
     manager_win.protocol("WM_DELETE_WINDOW", on_close)
     
-    # سربرگ و راهنمای مدیریت کلیدها
-    header_frame = tk.LabelFrame(manager_win, text=" راهنمای بخش مدیریت کلیدها " if current_lang == "fa" else " Key Manager Guide ", bg=c["card"], fg=c["accent"], font=FONT_TITLE)
-    header_frame.pack(fill="x", padx=12, pady=10)
-    
-    guide_text = "کلیدهای امنیتی خود را با نام دلخواه ذخیره کنید. با دوبار کلیک روی هر کلید، مستقیماً وارد فرم اصلی می‌شود." if current_lang == "fa" else "Save your secret keys securely. Double-click any key to load it into the main form."
-    tk.Label(header_frame, text=guide_text, bg=c["card"], fg=c["text"], font=FONT_MAIN, wraplength=380, justify="left").pack(padx=8, pady=6)
-
-    listbox = tk.Listbox(manager_win, bg=c["input"], fg=c["accent"], font=FONT_CODE, bd=1, relief="solid")
-    listbox.pack(fill="both", expand=True, padx=12, pady=5)
+    listbox = tk.Listbox(manager_win, bg=c["input"], fg=c["accent"], font=("Consolas", 10), bd=0)
+    listbox.pack(fill="both", expand=True, padx=10, pady=10)
     listbox.bind('<Double-1>', select_key)
     refresh_list()
     
     f = tk.Frame(manager_win, bg=c["card"])
-    f.pack(fill="x", padx=12, pady=5)
-    name_entry = tk.Entry(f, width=12, bg=c["input"], fg="white", insertbackground="white", font=FONT_MAIN)
-    name_entry.pack(side="left", padx=2, ipady=3)
-    val_entry = tk.Entry(f, width=18, bg=c["input"], fg="white", insertbackground="white", font=FONT_MAIN)
-    val_entry.pack(side="left", padx=2, ipady=3)
-    
-    tk.Button(f, text="+ افزودن" if current_lang == "fa" else "+ Add", command=add_new_key, bg=c["btn_secondary"], fg="white", font=FONT_BOLD, bd=0, cursor="hand2").pack(side="right", padx=2, ipady=2)
-    tk.Button(manager_win, text="حذف کلید انتخابی" if current_lang == "fa" else "Delete Key", command=delete_key, bg=c["btn_primary"], fg="white", font=FONT_BOLD, bd=0, cursor="hand2").pack(fill="x", padx=12, pady=(4, 12), ipady=3)
+    f.pack(fill="x", padx=10, pady=5)
+    name_entry = tk.Entry(f, width=12, bg=c["input"], fg="white", insertbackground="white"); name_entry.pack(side="left", padx=2, ipady=3)
+    val_entry = tk.Entry(f, width=18, bg=c["input"], fg="white", insertbackground="white"); val_entry.pack(side="left", padx=2, ipady=3)
+    tk.Button(f, text="+ افزودن" if current_lang == "fa" else "+ Add", command=add_new_key, bg=c["btn_secondary"], fg="white", bd=0).pack(side="right", padx=2)
+    tk.Button(manager_win, text="حذف کلید انتخابی" if current_lang == "fa" else "Delete Key", command=delete_key, bg=c["btn_primary"], fg="white", bd=0).pack(fill="x", padx=10, pady=8)
 
 def drop_inside_file_zone(event):
     global selected_file_path
@@ -746,7 +729,7 @@ if HAS_DND:
 else:
     root = tk.Tk()
 
-root.geometry("640x720") 
+root.geometry("640x760") 
 root.resizable(False, False)
 style = ttk.Style()
 style.theme_use('default')
@@ -755,44 +738,47 @@ style.theme_use('default')
 top_bar = tk.Frame(root)
 top_bar.pack(fill="x", padx=15, pady=8)
 
-menu_btn = tk.Button(top_bar, bd=0, cursor="hand2", padx=10, pady=3)
+menu_btn = tk.Button(top_bar, text="تنظیمات", font=("Vazirmatn", 9, "bold"), bd=0, cursor="hand2")
 menu_btn.pack(side="left")
 
-protocol_label = tk.Label(top_bar)
+protocol_label = tk.Label(top_bar, font=("Vazirmatn", 9, "bold"))
 protocol_label.pack(side="right")
 
-# بخش کلید امنیتی (خلوت و شیک)
+# بخش کلید امنیتی
 global_key_frame = tk.Frame(root, bd=0)
 global_key_frame.pack(fill="x", padx=20, pady=5)
 
-key_title_frame = tk.Frame(global_key_frame)
-key_title_frame.pack(fill="x", padx=10, pady=(10, 4))
+lbl_key_header_guide = tk.Label(global_key_frame, font=("Vazirmatn", 8), wraplength=580, justify="left")
+lbl_key_header_guide.pack(anchor="w", padx=10, pady=(6, 2))
 
-lbl_key = tk.Label(key_title_frame)
+key_title_frame = tk.Frame(global_key_frame)
+key_title_frame.pack(fill="x", padx=10, pady=(4, 2))
+
+lbl_key = tk.Label(key_title_frame, font=("Vazirmatn", 9, "bold"))
 lbl_key.pack(side="left")
 
-strength_label = tk.Label(key_title_frame)
+strength_label = tk.Label(key_title_frame, font=("Vazirmatn", 9, "bold"))
 strength_label.pack(side="right")
 
-key_entry = tk.Entry(global_key_frame, show="*", bd=1, relief="solid")
+key_entry = tk.Entry(global_key_frame, font=("Consolas", 11, "bold"), show="*", bd=1, relief="solid")
 key_entry.pack(fill="x", padx=10, pady=4, ipady=4)
 key_entry.bind("<KeyRelease>", check_key_strength)
 
 key_opt_frame = tk.Frame(global_key_frame)
-key_opt_frame.pack(fill="x", padx=10, pady=(4, 10))
+key_opt_frame.pack(fill="x", padx=10, pady=(2, 8))
 
 show_key_var = tk.BooleanVar()
-show_key_btn = tk.Checkbutton(key_opt_frame, variable=show_key_var, command=toggle_password_visibility, cursor="hand2")
+show_key_btn = tk.Checkbutton(key_opt_frame, variable=show_key_var, command=toggle_password_visibility, font=("Vazirmatn", 8), cursor="hand2")
 show_key_btn.pack(side="left")
 
-btn_key_manager = tk.Button(key_opt_frame, command=open_key_manager, bd=0, cursor="hand2")
-btn_key_manager.pack(side="right", padx=2, ipadx=8, ipady=3)
+btn_key_manager = tk.Button(key_opt_frame, command=open_key_manager, font=("Vazirmatn", 8), bd=0, cursor="hand2")
+btn_key_manager.pack(side="right", padx=2, ipadx=6, ipady=2)
 
-btn_rand_key = tk.Button(key_opt_frame, command=generate_random_key, bd=0, cursor="hand2")
-btn_rand_key.pack(side="right", padx=2, ipadx=8, ipady=3)
+btn_rand_key = tk.Button(key_opt_frame, command=generate_random_key, font=("Vazirmatn", 8, "bold"), bd=0, cursor="hand2")
+btn_rand_key.pack(side="right", padx=2, ipadx=6, ipady=2)
 
-btn_copy_key = tk.Button(key_opt_frame, command=copy_key, bd=0, cursor="hand2")
-btn_copy_key.pack(side="right", padx=2, ipadx=8, ipady=3)
+btn_copy_key = tk.Button(key_opt_frame, command=copy_key, font=("Vazirmatn", 8), bd=0, cursor="hand2")
+btn_copy_key.pack(side="right", padx=2, ipadx=6, ipady=2)
 
 # تب‌ها
 notebook = ttk.Notebook(root)
@@ -804,38 +790,38 @@ notebook.add(tab_text_frame)
 notebook.add(tab_file_frame)
 
 # تب متن
-lbl_input = tk.Label(tab_text_frame)
+lbl_input = tk.Label(tab_text_frame, font=("Vazirmatn", 9, "bold"))
 lbl_input.pack(anchor="w", padx=12, pady=(10, 2))
 
-text_entry = tk.Text(tab_text_frame, height=3, bd=1, relief="solid")
+text_entry = tk.Text(tab_text_frame, height=3, font=("Vazirmatn", 9), bd=1, relief="solid")
 text_entry.pack(fill="x", padx=12, pady=2)
 
-btn_paste = tk.Button(tab_text_frame, command=paste_input, bd=0, cursor="hand2")
-btn_paste.pack(fill="x", padx=12, pady=4, ipady=3)
+btn_paste = tk.Button(tab_text_frame, command=paste_input, font=("Vazirmatn", 8, "bold"), bd=0, cursor="hand2")
+btn_paste.pack(fill="x", padx=12, pady=4, ipady=2)
 
 btn_frame = tk.Frame(tab_text_frame)
 btn_frame.pack(fill="x", padx=12, pady=6)
 
-encrypt_btn = tk.Button(btn_frame, command=encode_message, bd=0, cursor="hand2")
+encrypt_btn = tk.Button(btn_frame, command=encode_message, font=("Vazirmatn", 9, "bold"), bd=0, cursor="hand2")
 encrypt_btn.pack(side="left", fill="x", expand=True, padx=(0, 2), ipady=5)
 
-decrypt_btn = tk.Button(btn_frame, command=decode_message, bd=0, cursor="hand2")
+decrypt_btn = tk.Button(btn_frame, command=decode_message, font=("Vazirmatn", 9, "bold"), bd=0, cursor="hand2")
 decrypt_btn.pack(side="left", fill="x", expand=True, padx=2, ipady=5)
 
-clear_btn = tk.Button(btn_frame, command=clear_all, bd=0, cursor="hand2")
+clear_btn = tk.Button(btn_frame, command=clear_all, font=("Vazirmatn", 9), bd=0, cursor="hand2")
 clear_btn.pack(side="right", fill="x", expand=True, padx=(2, 0), ipady=5)
 
-lbl_output = tk.Label(tab_text_frame)
+lbl_output = tk.Label(tab_text_frame, font=("Vazirmatn", 9, "bold"))
 lbl_output.pack(anchor="w", padx=12, pady=(6, 2))
 
-result_entry = tk.Text(tab_text_frame, height=3, bd=1, relief="solid")
+result_entry = tk.Text(tab_text_frame, height=3, font=("Consolas", 9, "bold"), bd=1, relief="solid")
 result_entry.pack(fill="x", padx=12, pady=2)
 
-btn_copy_output = tk.Button(tab_text_frame, command=copy_output, bd=0, cursor="hand2")
-btn_copy_output.pack(fill="x", padx=12, pady=(4, 10), ipady=4)
+btn_copy_output = tk.Button(tab_text_frame, command=copy_output, font=("Vazirmatn", 9, "bold"), bd=0, cursor="hand2")
+btn_copy_output.pack(fill="x", padx=12, pady=(4, 10), ipady=3)
 
 # تب فایل
-lbl_file = tk.Label(tab_file_frame)
+lbl_file = tk.Label(tab_file_frame, font=("Vazirmatn", 9, "bold"))
 lbl_file.pack(anchor="w", padx=12, pady=(10, 4))
 
 drop_zone_box = tk.LabelFrame(tab_file_frame, bd=1, relief="solid")
@@ -845,19 +831,19 @@ if HAS_DND:
     drop_zone_box.drop_target_register(DND_FILES)
     drop_zone_box.dnd_bind('<<Drop>>', drop_inside_file_zone)
 
-btn_select_file = tk.Button(drop_zone_box, command=select_file, bd=1, relief="solid", cursor="hand2")
+btn_select_file = tk.Button(drop_zone_box, command=select_file, font=("Vazirmatn", 9, "bold"), bd=1, relief="solid", cursor="hand2")
 btn_select_file.pack(pady=4, ipadx=10, ipady=2)
 
-lbl_file_status = tk.Label(drop_zone_box)
+lbl_file_status = tk.Label(drop_zone_box, font=("Vazirmatn", 9))
 lbl_file_status.pack(pady=2)
 
 file_btn_frame = tk.Frame(tab_file_frame)
 file_btn_frame.pack(fill="x", padx=12, pady=10)
 
-btn_enc_file = tk.Button(file_btn_frame, command=lambda: start_file_thread("encrypt"), bd=0, cursor="hand2")
+btn_enc_file = tk.Button(file_btn_frame, command=lambda: start_file_thread("encrypt"), font=("Vazirmatn", 9, "bold"), bd=0, cursor="hand2")
 btn_enc_file.pack(side="left", fill="x", expand=True, padx=(0, 4), ipady=5)
 
-btn_dec_file = tk.Button(file_btn_frame, command=lambda: start_file_thread("decrypt"), bd=0, cursor="hand2")
+btn_dec_file = tk.Button(file_btn_frame, command=lambda: start_file_thread("decrypt"), font=("Vazirmatn", 9, "bold"), bd=0, cursor="hand2")
 btn_dec_file.pack(side="right", fill="x", expand=True, padx=(4, 0), ipady=5)
 
 progress_bar = ttk.Progressbar(tab_file_frame, orient="horizontal", mode="determinate")
@@ -867,13 +853,13 @@ progress_bar.pack(fill="x", padx=12, pady=5)
 log_title_frame = tk.Frame(root)
 log_title_frame.pack(fill="x", padx=20, pady=(2, 0))
 
-lbl_log = tk.Label(log_title_frame)
+lbl_log = tk.Label(log_title_frame, font=("Vazirmatn", 8, "bold"))
 lbl_log.pack(side="right")
 
-btn_toggle_log = tk.Button(log_title_frame, command=toggle_logs, bd=0, cursor="hand2")
+btn_toggle_log = tk.Button(log_title_frame, command=toggle_logs, font=("Vazirmatn", 8), bd=0, cursor="hand2")
 btn_toggle_log.pack(side="left", padx=2)
 
-btn_clear_log = tk.Button(log_title_frame, command=clear_logs_action, bd=0, cursor="hand2")
+btn_clear_log = tk.Button(log_title_frame, command=clear_logs_action, font=("Vazirmatn", 8), bd=0, cursor="hand2")
 btn_clear_log.pack(side="left", padx=2)
 
 log_container = tk.Frame(root)
@@ -882,11 +868,11 @@ log_container.pack(fill="x", padx=20, pady=2)
 scrollbar_y = tk.Scrollbar(log_container, orient="vertical")
 scrollbar_y.pack(side="right", fill="y")
 
-log_box = tk.Text(log_container, height=3, bd=1, relief="solid", state="disabled", yscrollcommand=scrollbar_y.set)
+log_box = tk.Text(log_container, height=3, bd=1, relief="solid", state="disabled", font=("Consolas", 8), yscrollcommand=scrollbar_y.set)
 log_box.pack(side="left", fill="both", expand=True)
 scrollbar_y.config(command=log_box.yview)
 
-status_label = tk.Label(root)
+status_label = tk.Label(root, font=("Vazirmatn", 9))
 status_label.pack(side="bottom", pady=6)
 
 # منوی اصلی
