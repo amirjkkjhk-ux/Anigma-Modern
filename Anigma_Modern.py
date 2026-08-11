@@ -36,7 +36,6 @@ CURRENT_VERSION = "17.5"
 PBKDF2_ITERATIONS = 200_000
 SALT_SIZE = 16
 
-# آدرس‌های اصلاح‌شده (حذف پسوند اضافی .txt.txt)
 VERSION_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/main/version.txt"
 CHECKSUMS_URL = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/main/checksums.txt"
 
@@ -96,7 +95,7 @@ LANGUAGES = {
         "help_usage_title": "آموزش نحوه استفاده",
         "help_usage_text": "۱. قفل‌گذاری متنی:\n - کلید امنیتی را وارد کرده و متن را رمزگذاری/رمزگشایی کنید.\n\n۲. قفل‌گذاری فایل:\n - فایل را انتخاب یا Drag & Drop کرده و دکمه مربوطه را بزنید.",
         "changelog_title": "تغییرات آخرین آپدیت (v17.5)",
-        "changelog_text": "- رفع خطای 404 در بخش بررسی آپدیت آنلاین\n- بازگرداندن متن «تنظیمات» به منوی همبرگری\n- ارتقا و مدرن‌سازی ظاهر برنامه‌"
+        "changelog_text": "- رفع کامل مکانیزم آپدیت خودکار و بازراه‌اندازی (Auto-Restart) برنامه\n- بهبود دریافت فایل‌های جدید از گیتهاب\n- ارتقا و مدرن‌سازی ظاهر برنامه‌"
     },
     "en": {
         "title": f"ANIGMA MODERN PRO v{CURRENT_VERSION}",
@@ -153,7 +152,7 @@ LANGUAGES = {
         "help_usage_title": "How to Use",
         "help_usage_text": "1. Text Vault: Enter key & perform action.\n2. File Vault: Drag & drop file to encrypt/decrypt.",
         "changelog_title": "Latest Update Changelog (v17.5)",
-        "changelog_text": "- Fixed HTTP 404 update URL issue\n- Restored settings text alongside hamburger icon\n- UI/UX polish"
+        "changelog_text": "- Fixed update mechanism & auto-restart execution flow\n- Refactored updater logic for GitHub compatibility\n- UI/UX polish"
     }
 }
 
@@ -423,6 +422,8 @@ def thread_download_overhauled(new_version):
     try:
         current_exe_path = os.path.abspath(sys.argv[0])
         headers = {'User-Agent': 'Mozilla/5.0'}
+        
+        # اگر سورس پایتون است
         if current_exe_path.endswith(".py"):
             source_url = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/main/Anigma_Modern.py"
             req = urllib.request.Request(source_url, headers=headers)
@@ -430,10 +431,37 @@ def thread_download_overhauled(new_version):
                 new_code = response.read()
             with open(current_exe_path, "wb") as f:
                 f.write(new_code)
-            root.after(0, lambda: messagebox.showinfo("موفقیت", "برنامه به نسخه جدید ارتقا یافت!"))
+            
+            root.after(0, lambda: restart_program_after_update())
             return
+        else:
+            # اگر برنامه EXE است
+            exe_url = "https://raw.githubusercontent.com/amirjkkjhk-ux/Anigma-Modern/main/Anigma_Modern.exe"
+            temp_path = current_exe_path + ".new"
+            req = urllib.request.Request(exe_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=30) as response:
+                with open(temp_path, "wb") as f:
+                    f.write(response.read())
+            
+            # اجرای اسکریپت باتچ برای جایگزینی فایل در حین بسته شدن
+            bat_path = os.path.join(os.path.dirname(current_exe_path), "update.bat")
+            with open(bat_path, "w") as bat:
+                bat.write(f'@echo off\n')
+                bat.write(f'timeout /t 2 /nobreak > NUL\n')
+                bat.write(f'move /y "{temp_path}" "{current_exe_path}"\n')
+                bat.write(f'start "" "{current_exe_path}"\n')
+                bat.write(f'del "%~f0"\n')
+            
+            subprocess.Popen([bat_path], shell=True)
+            root.after(0, lambda: root.destroy())
+
     except Exception as e:
         root.after(0, lambda: messagebox.showerror("خطا", f"خطا در آپدیت: {str(e)}"))
+
+def restart_program_after_update():
+    messagebox.showinfo("موفقیت", "برنامه با موفقیت آپدیت شد. نرم‌افزار جهت اعمال تغییرات مجدداً اجرا می‌شود." if current_lang == "fa" else "Update completed. Application will restart now.")
+    python = sys.executable
+    os.execl(python, python, *sys.argv)
 
 def open_help():
     help_window = tk.Toplevel(root)
