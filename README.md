@@ -1,4 +1,4 @@
-# 🔐 Anigma Modern v16.5 (آنیگما مدرن)
+# 🔐 Anigma Modern v17.5 (آنیگما مدرن)
 
 ![Version](https://img.shields.io/badge/version-16.5-00ffcc)
 ![License](https://img.shields.io/badge/license-MIT-blue)
