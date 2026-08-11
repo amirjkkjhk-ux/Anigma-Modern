@@ -2,7 +2,7 @@
 # EMAIL: amirjkkjhk@gmail.com
 # TELEGRAM ID: @Amirshoq
 # ====================================================================================
-# PROJECT: ANIGMA MODERN | VERSION: 15.8 (Fixed Memory, Progress Bar & Secure Random)
+# PROJECT: ANIGMA MODERN | VERSION: 16.5 (Fixed Memory, Progress Bar & Secure Random)
 # ====================================================================================
 
 import tkinter as tk
