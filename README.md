@@ -1,7 +1,7 @@
 # 🔐 Anigma Modern v17.5 (آنیگما مدرن)
 
 ![Version](https://img.shields.io/badge/version-17.5-00ffcc)
-![License](https://img.shields.io/badge/license-MIT-blue)
+![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 ![Platform](https://img.shields.io/badge/platform-Web%20%7C%20Windows-green)
 
 **Anigma Modern** یک ابزار فوق امنیتی و پیشرفته برای قفل‌گذاری متن‌ها و فایل‌های سنگین با استفاده از الگوریتم **AES-256-GCM** و **PBKDF2** است.
