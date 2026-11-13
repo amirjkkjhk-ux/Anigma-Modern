@@ -19,14 +19,14 @@
   <img alt="Languages" src="https://img.shields.io/badge/Languages-فارسی%20%7C%20English-F5B942?style=flat-square&labelColor=00081A" />
 </p>
 
-**[🇬🇧 English](#-english)** &nbsp;·&nbsp; **[🇮🇷 فارسی](#-فارسی)** &nbsp;·&nbsp; **[⬇️ Download / دانلود](../../releases)**
+<a href="#english">🇬🇧 English</a> &nbsp;·&nbsp; <a href="#persian">🇮🇷 فارسی</a> &nbsp;·&nbsp; <a href="../../releases">⬇️ Download / دانلود</a>
 
 
 </div>
 
 ---
 
-<a id="-english"></a>
+<a id="english"></a>
 ## 🇬🇧 English
 
 ### 🔐 What is Anigma?
@@ -77,7 +77,7 @@ Anigma is provided in good faith to help protect people's privacy and is provide
 
 ---
 
-<a id="-فارسی"></a>
+<a id="persian"></a>
 <div dir="rtl">
 
 ## 🇮🇷 فارسی
