@@ -1,108 +1,130 @@
 <div align="center">
 
-<img src="dist/icons/icon-192.png" width="96" alt="Anigma" />
+<img src="dist/icons/icon-512.png" width="140" alt="Anigma logo" />
 
 # Anigma · آنیگما
 
-**Private, offline-first encryption for messages and files — for everyone, everywhere.**
-**رمزنگاری خصوصی و آفلاین پیام‌ها و فایل‌ها — برای همه، در همه‌جا.**
+### Your words. Your keys. Your privacy.
+### حرف‌های شما، کلیدهای شما، حریم خصوصی شما.
 
-[English](#english) · [فارسی](#فارسی)
+<p>
+  <img alt="Android" src="https://img.shields.io/badge/Android-APK-35B4FF?style=for-the-badge&logo=android&logoColor=white&labelColor=00081A" />
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-Installer-35B4FF?style=for-the-badge&logo=windows&logoColor=white&labelColor=00081A" />
+  <img alt="Web" src="https://img.shields.io/badge/Web-PWA-35B4FF?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=00081A" />
+</p>
+<p>
+  <img alt="Offline first" src="https://img.shields.io/badge/Offline--first-✓-2ECC71?style=flat-square&labelColor=00081A" />
+  <img alt="No account" src="https://img.shields.io/badge/No%20account-✓-2ECC71?style=flat-square&labelColor=00081A" />
+  <img alt="End-to-end encryption" src="https://img.shields.io/badge/End--to--end%20encryption-AES--GCM-35B4FF?style=flat-square&labelColor=00081A" />
+  <img alt="Languages" src="https://img.shields.io/badge/Languages-فارسی%20%7C%20English-F5B942?style=flat-square&labelColor=00081A" />
+</p>
+
+**[🇬🇧 English](#-english)** &nbsp;·&nbsp; **[🇮🇷 فارسی](#-فارسی)** &nbsp;·&nbsp; **[⬇️ Download / دانلود](../../releases)**
 
 </div>
 
 ---
 
-<a id="english"></a>
-## English
+<a id="-english"></a>
+## 🇬🇧 English
 
-### What is Anigma?
-Anigma is a free, open application that lets you encrypt text messages and files with modern public-key cryptography, entirely on your own device. You write or choose something, Anigma turns it into an unreadable package, and only the person you chose can open it. You can send that package over any channel — messenger, email, SMS, USB stick, printed QR code — without trusting the channel.
+### 🔐 What is Anigma?
+Anigma is a free app that keeps your messages and files private. You write something, Anigma locks it with the key of the person you choose, and only that person can open it. You can then send it through **any** channel you like — a messenger, email, SMS, a USB stick or a printed QR code — and it stays protected the whole way.
 
-There is **no account, no sign-up, no server that stores your data, and no analytics**. Your keys are created on your device and never leave it.
+Everything happens **on your own device**. There is no account to create, no server holding your data, and no tracking. Your keys are born on your device and stay there.
 
-### Why it exists
-Anigma was built with a humanitarian goal: **to protect the privacy and safety of ordinary people.** Journalists, activists, aid workers, patients, families, students and anyone living under surveillance or censorship should be able to communicate without fear. Privacy is a basic human right, and strong cryptography should be usable by non-experts, in any language, on any device, even with a poor or monitored internet connection. Anigma aims to make that easy: a simple mode for everyday users and an advanced mode for experts.
+### 🌍 Why we built it
+Anigma was created with a humanitarian purpose: **to protect the privacy and safety of everyday people.** Privacy is a basic human right. Journalists, aid workers, students, families, patients and anyone who simply values their personal space should be able to communicate with confidence — in their own language, on whatever device they have, even with a slow or closely watched connection. Strong protection should feel simple, and Anigma is designed to make it so.
 
-### Features
-- **End-to-end encryption** of messages and files, with a modern, authenticated cipher (AES-GCM) and key exchange (ECDH P-256, optional X25519).
-- **Strong password protection** for your identity using memory-hard key derivation (Argon2id).
-- **Offline-first:** after installation it works without internet. Nothing is uploaded.
-- **Contacts via QR code**, with verification codes so you can confirm you are really talking to the right person.
-- **Encrypted groups** with member removal.
-- **Encrypted identity backup** that only you can open.
-- **Simple & Advanced modes**, full **Persian (فارسی) and English** interface, right-to-left support.
-- **Runs everywhere:** Android (APK), Windows (installer), and any modern browser / installable web app (PWA) on phone, tablet and desktop.
-- **Signed updates:** the app only accepts update announcements that carry a valid digital signature, so a hacked server cannot push a fake update.
-
-### Download
-Get the latest version from the **[Releases](../../releases)** page:
-
-| Platform | File |
+### ✨ Highlights
+| | |
 |---|---|
-| Android | `Anigma.apk` |
-| Windows | `Anigma-Setup.exe` |
+| 🔒 **End-to-end encryption** | Messages and files are locked with modern, authenticated cryptography (AES-GCM, ECDH P-256, optional X25519). |
+| 🧠 **Strong password protection** | Your identity is guarded by a memory-hard function (Argon2id). |
+| 📴 **Offline-first** | Works without internet once installed. Nothing is uploaded. |
+| 📷 **QR contacts** | Add people by scanning a QR code and confirm them with a short verification code. |
+| 👥 **Encrypted groups** | Share with several people and remove members when needed. |
+| 💾 **Encrypted backup** | Back up your identity in a file only you can open. |
+| 🌐 **Two languages** | Full فارسی and English interface, with right-to-left support. |
+| 🎛️ **Simple & Advanced modes** | Easy for everyday use, with extra controls for experts. |
+| 📱💻 **Works everywhere** | Android, Windows, and any modern browser on phone, tablet or computer. |
+| ✅ **Trusted updates** | The app only accepts update notices carrying a valid digital signature. |
 
-Verify the SHA-256 checksum shown in the release before installing. On Android you may need to allow “install from this source”. Windows may show a SmartScreen notice because the installer is not yet signed with a paid code-signing certificate — choose *More info → Run anyway* only if the checksum matches.
+### ⬇️ Download
+Get the newest version from the **[Releases](../../releases)** page.
 
-### Privacy & security notes
-- Everything is processed locally. Anigma does not collect personal data.
-- The only network request the app makes is a small check for signed update information on GitHub, which — like any web request — reveals your IP address to GitHub.
-- The app uses the cryptography built into your platform (Web Crypto API); no cryptographic primitive is implemented by hand.
-- **Please be honest with yourself about limits:** Anigma has not been independently audited by a third party yet, and no software can protect a device that is already compromised. Use a long, unique password, keep your device updated, and back up your identity.
+| Platform | File | Notes |
+|---|---|---|
+| 📱 Android | `Anigma.apk` | If asked, allow “install from this source”. |
+| 💻 Windows | `Anigma-Setup.exe` | If Windows shows a SmartScreen notice, choose *More info → Run anyway* after checking the checksum below. |
 
-### Build from source
-This repository builds the Android APK and Windows installer automatically with GitHub Actions (**Actions → Build Anigma (APK + EXE) → Run workflow**). The web app lives in `dist/`; the Android shell uses Capacitor and the Windows shell uses Electron (`native/`, `electron/`).
+> 💡 **Tip:** Each release lists a SHA-256 checksum. Comparing it with your downloaded file is a quick way to be sure it is exactly the file we published.
 
-### Disclaimer
-Provided “as is”, without warranty. Use it lawfully and responsibly.
+### 🛡️ Your privacy at a glance
+- ✅ Everything is processed locally on your device.
+- ✅ No account, no ads, no analytics, no personal data collection.
+- ✅ Built on your platform's own trusted cryptography (Web Crypto API).
+- ℹ️ The app occasionally checks GitHub for signed update information. Like any web request, GitHub can see an IP address when this happens.
+
+### 🌱 Tips for the best experience
+- Choose a long, unique password — a few random words work well.
+- Keep your device and the app up to date.
+- Save an encrypted backup of your identity somewhere safe.
+
+### 📜 Terms of use
+Anigma is provided in good faith to help protect people's privacy and is provided "as is." The developers assume no responsibility for any illegal or unethical use of the program. Ordinary users who use Anigma to protect their privacy have no reason to worry
 
 ---
 
-<a id="فارسی"></a>
+<a id="-فارسی"></a>
 <div dir="rtl">
 
-## فارسی
+## 🇮🇷 فارسی
 
-### آنیگما چیست؟
-آنیگما یک برنامهٔ رایگان است که پیام‌های متنی و فایل‌های شما را با رمزنگاری کلید عمومی و مدرن، کاملاً روی دستگاه خودتان رمزگذاری می‌کند. شما متن یا فایل را انتخاب می‌کنید، آنیگما آن را به یک بستهٔ ناخوانا تبدیل می‌کند و فقط کسی که انتخاب کرده‌اید می‌تواند بازش کند. این بسته را از هر مسیری می‌توانید بفرستید — پیام‌رسان، ایمیل، پیامک، فلش یا QR چاپ‌شده — بدون این‌که لازم باشد به آن مسیر اعتماد کنید.
+### 🔐 آنیگما چیست؟
+آنیگما یک برنامهٔ رایگان برای خصوصی نگه داشتن پیام‌ها و فایل‌های شماست. شما چیزی می‌نویسید، آنیگما آن را با کلیدِ همان کسی که انتخاب کرده‌اید قفل می‌کند و فقط او می‌تواند بازش کند. بعد آن را از **هر مسیری** که دوست دارید می‌فرستید — پیام‌رسان، ایمیل، پیامک، فلش یا QR چاپ‌شده — و در تمام مسیر محافظت‌شده می‌ماند.
 
-**حساب کاربری، ثبت‌نام، سروری که داده‌های شما را نگه دارد و ابزار ردیابی وجود ندارد.** کلیدهای شما روی دستگاه خودتان ساخته می‌شوند و از آن بیرون نمی‌روند.
+همه‌چیز **روی دستگاه خودتان** انجام می‌شود. نیازی به ساخت حساب نیست، سروری داده‌های شما را نگه نمی‌دارد و ردیابی‌ای وجود ندارد. کلیدهای شما روی دستگاه خودتان ساخته می‌شوند و همان‌جا می‌مانند.
 
-### چرا ساخته شد؟
-آنیگما با هدفی **بشردوستانه** ساخته شده است: **حفاظت از حریم خصوصی و امنیت مردم عادی.** روزنامه‌نگاران، فعالان، امدادگران، بیماران، خانواده‌ها، دانشجویان و هر کسی که زیر نظارت یا سانسور زندگی می‌کند باید بتواند بدون ترس ارتباط برقرار کند. حریم خصوصی حق اساسی انسان است و رمزنگاری قوی باید برای افراد غیرمتخصص، به هر زبانی، روی هر دستگاهی و حتی با اینترنت ضعیف یا تحت نظارت، قابل استفاده باشد. آنیگما می‌خواهد این کار را ساده کند: حالت ساده برای کاربران روزمره و حالت پیشرفته برای متخصصان.
+### 🌍 چرا ساختیم؟
+آنیگما با هدفی **بشردوستانه** ساخته شده است: **حفاظت از حریم خصوصی و امنیت مردم عادی.** حریم خصوصی یک حق اساسی انسان است. روزنامه‌نگاران، امدادگران، دانشجویان، خانواده‌ها، بیماران و هر کسی که برای فضای شخصی‌اش ارزش قائل است باید بتواند با اطمینان ارتباط برقرار کند — به زبان خودش، روی هر دستگاهی که دارد، حتی با اینترنت کند یا تحت نظارت. محافظت قوی باید ساده باشد و آنیگما برای همین ساخته شده است.
 
-### امکانات
-- **رمزنگاری سرتاسری** پیام‌ها و فایل‌ها با رمزگذاری مدرن و احرازهویت‌شده (AES-GCM) و تبادل کلید (ECDH P-256 و در صورت انتخاب X25519).
-- **محافظت قوی از هویت با رمز عبور** با روش مشتق‌سازی کلید حافظه‌سخت (Argon2id).
-- **کار آفلاین:** پس از نصب بدون اینترنت کار می‌کند و چیزی آپلود نمی‌شود.
-- **افزودن مخاطب با QR** و کد تأیید برای اطمینان از این‌که واقعاً با فرد درست در ارتباطید.
-- **گروه‌های رمزگذاری‌شده** همراه با حذف عضو.
-- **پشتیبان رمزگذاری‌شدهٔ هویت** که فقط خودتان می‌توانید باز کنید.
-- **حالت ساده و پیشرفته**، رابط کامل **فارسی و انگلیسی** و پشتیبانی راست‌به‌چپ.
-- **اجرا در همه‌جا:** اندروید (APK)، ویندوز (نصب‌کننده) و هر مرورگر مدرن / وب‌اپ نصب‌شدنی (PWA) روی موبایل، تبلت و کامپیوتر.
-- **به‌روزرسانی امضاشده:** برنامه فقط اعلان‌های به‌روزرسانی را می‌پذیرد که امضای دیجیتال معتبر داشته باشند؛ پس سروری که هک شده نمی‌تواند نسخهٔ جعلی تحمیل کند.
-
-### دانلود
-آخرین نسخه را از صفحهٔ **[Releases](../../releases)** بگیرید:
-
-| سیستم‌عامل | فایل |
+### ✨ ویژگی‌های برجسته
+| | |
 |---|---|
-| اندروید | `Anigma.apk` |
-| ویندوز | `Anigma-Setup.exe` |
+| 🔒 **رمزنگاری سرتاسری** | پیام‌ها و فایل‌ها با رمزنگاری مدرن و احرازهویت‌شده (AES-GCM، ECDH P-256 و در صورت انتخاب X25519) قفل می‌شوند. |
+| 🧠 **محافظت قوی با رمز عبور** | هویت شما با تابع حافظه‌سخت Argon2id محافظت می‌شود. |
+| 📴 **کار آفلاین** | پس از نصب بدون اینترنت کار می‌کند و چیزی آپلود نمی‌شود. |
+| 📷 **مخاطب با QR** | با اسکن QR مخاطب اضافه کنید و با یک کد تأیید کوتاه مطمئن شوید. |
+| 👥 **گروه‌های رمزگذاری‌شده** | با چند نفر هم‌زمان به‌اشتراک بگذارید و هر وقت لازم شد عضو را حذف کنید. |
+| 💾 **پشتیبان رمزگذاری‌شده** | از هویت خود در فایلی نسخهٔ پشتیبان بگیرید که فقط خودتان بازش می‌کنید. |
+| 🌐 **دو زبانه** | رابط کامل فارسی و انگلیسی با پشتیبانی راست‌به‌چپ. |
+| 🎛️ **حالت ساده و پیشرفته** | برای استفادهٔ روزمره ساده است و برای متخصصان گزینه‌های بیشتری دارد. |
+| 📱💻 **اجرا در همه‌جا** | اندروید، ویندوز و هر مرورگر مدرن روی موبایل، تبلت یا کامپیوتر. |
+| ✅ **به‌روزرسانی مطمئن** | برنامه فقط اعلان‌های به‌روزرسانی با امضای دیجیتال معتبر را می‌پذیرد. |
 
-پیش از نصب، مقدار SHA-256 درج‌شده در release را بررسی کنید. در اندروید ممکن است لازم باشد «نصب از این منبع» را مجاز کنید. ویندوز ممکن است هشدار SmartScreen نشان دهد، چون نصب‌کننده هنوز با گواهی تجاریِ امضای کد امضا نشده است؛ فقط اگر مقدار SHA-256 درست بود، *More info ← Run anyway* را بزنید.
+### ⬇️ دانلود
+جدیدترین نسخه را از صفحهٔ **[Releases](../../releases)** بگیرید.
 
-### نکات حریم خصوصی و امنیت
-- همهٔ پردازش‌ها محلی است و آنیگما داده‌ٔ شخصی جمع‌آوری نمی‌کند.
-- تنها درخواست شبکه‌ای برنامه، بررسی کوچکِ اطلاعات امضاشدهٔ به‌روزرسانی در گیت‌هاب است که — مثل هر درخواست وب — آدرس IP شما را به گیت‌هاب نشان می‌دهد.
-- برنامه از رمزنگاری داخلی خود پلتفرم (Web Crypto API) استفاده می‌کند و هیچ الگوریتم رمزنگاری‌ای را دستی پیاده نکرده است.
-- **صادقانه دربارهٔ محدودیت‌ها:** آنیگما هنوز توسط شخص ثالث مستقل ممیزی نشده و هیچ نرم‌افزاری نمی‌تواند از دستگاهِ از‌قبل‌آلوده محافظت کند. رمز عبور بلند و یکتا بگذارید، دستگاهتان را به‌روز نگه دارید و از هویت خود پشتیبان بگیرید.
+| سیستم‌عامل | فایل | توضیح |
+|---|---|---|
+| 📱 اندروید | `Anigma.apk` | اگر خواست، «نصب از این منبع» را مجاز کنید. |
+| 💻 ویندوز | `Anigma-Setup.exe` | اگر ویندوز پیام SmartScreen نشان داد، پس از بررسی checksum گزینهٔ *More info ← Run anyway* را بزنید. |
 
-### ساخت از روی سورس
-این مخزن APK اندروید و نصب‌کنندهٔ ویندوز را به‌صورت خودکار با GitHub Actions می‌سازد (**Actions ← Build Anigma (APK + EXE) ← Run workflow**). برنامهٔ وب در `dist/` است؛ پوستهٔ اندروید با Capacitor و پوستهٔ ویندوز با Electron ساخته می‌شود (`native/` و `electron/`).
+> 💡 **نکته:** هر release یک checksum از نوع SHA-256 دارد. مقایسهٔ آن با فایل دانلودشده راه سریعی است تا مطمئن شوید دقیقاً همان فایلی است که منتشر کرده‌ایم.
 
-### سلب مسئولیت
-این برنامه «همان‌گونه که هست» و بدون هیچ ضمانتی ارائه می‌شود. لطفاً قانونی و مسئولانه از آن استفاده کنید.
+### 🛡️ حریم خصوصی شما در یک نگاه
+- ✅ همهٔ پردازش‌ها روی دستگاه خودتان انجام می‌شود.
+- ✅ بدون حساب کاربری، بدون تبلیغات، بدون آمارگیری و بدون جمع‌آوری اطلاعات شخصی.
+- ✅ بر پایهٔ رمزنگاری قابل‌اعتمادِ خودِ سیستم‌عامل (Web Crypto API) ساخته شده است.
+- ℹ️ برنامه گاهی اطلاعات امضاشدهٔ به‌روزرسانی را از گیت‌هاب بررسی می‌کند. مثل هر درخواست وب، گیت‌هاب در این لحظه آدرس IP را می‌بیند.
+
+### 🌱 توصیه‌هایی برای بهترین تجربه
+- رمز عبور بلند و یکتا انتخاب کنید؛ چند کلمهٔ تصادفی انتخاب خوبی است.
+- دستگاه و برنامه را به‌روز نگه دارید.
+- یک نسخهٔ پشتیبان رمزگذاری‌شده از هویت خود را در جای امنی نگه دارید.
+
+### 📜 شرایط استفاده
+آنیگما با حسن‌نیت و برای کمک به حفاظت از حریم خصوصی مردم ارائه شده و «همان‌گونه که هست» عرضه می‌شود. سازندگان هیچ مسئولیتی در قبال استفادهٔ غیرقانونی یا غیراخلاقی از برنامه نمی‌پذیرند. کاربران عادی که برای حفاظت از حریم خصوصی خود از آنیگما استفاده می‌کنند جای هیچ نگرانی ندارند.
 
 </div>
