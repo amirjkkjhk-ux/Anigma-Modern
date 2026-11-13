@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="dist/icons/icon-512.png" width="140" alt="Anigma logo" />
+<img src="icons/icon-512.png" width="140" alt="Anigma logo" />
 
 # Anigma · آنیگما
 
