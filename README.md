@@ -26,6 +26,51 @@
 
 ---
 
+## 🖥️ Screenshots · نمایی از محیط برنامه
+
+Explore the real Anigma interface across desktop and mobile.  
+تصاویر واقعی از محیط آنیگما در نسخه‌های دسکتاپ و موبایل.
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/en-dark-desktop-04-secure-message.jpg" alt="Anigma desktop secure message screen" width="100%" />
+      <strong>Secure messaging · پیام امن</strong>
+    </td>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/en-dark-desktop-05-encrypted-result.jpg" alt="Anigma encrypted message result" width="100%" />
+      <strong>Encrypted result · نتیجه رمزگذاری</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/screenshots/en-dark-desktop-06-files.jpg" alt="Anigma encrypted files screen" width="100%" />
+      <strong>Files · فایل‌ها</strong>
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/en-dark-desktop-07-contacts.jpg" alt="Anigma contacts screen" width="100%" />
+      <strong>Contacts · مخاطبین</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/screenshots/en-dark-desktop-08-groups.jpg" alt="Anigma encrypted groups screen" width="100%" />
+      <strong>Groups · گروه‌ها</strong>
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/en-dark-mobile-04-secure-message.jpg" alt="Anigma mobile secure message screen" width="100%" />
+      <strong>Mobile · نسخه موبایل</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <img src="assets/screenshots/fa-light-desktop-04-secure-message.jpg" alt="Anigma Persian light desktop secure message screen" width="82%" />
+      <br />
+      <strong>Persian interface · رابط فارسی</strong>
+    </td>
+  </tr>
+</table>
+
 <a id="english"></a>
 ## 🇬🇧 English
 
