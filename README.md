@@ -19,7 +19,7 @@
   <img alt="Languages" src="https://img.shields.io/badge/Languages-فارسی%20%7C%20English-F5B942?style=flat-square&labelColor=00081A" />
 </p>
 
-**[🇬🇧 English](#-english)** &nbsp;·&nbsp; **[🇮🇷 فارسی](#-فارسی)** &nbsp;·&nbsp; **[⬇️ Download / دانلود](../../releases)**
+**[🇬🇧 English](english)** &nbsp;·&nbsp; **[🇮🇷 فارسی](فارسی)** &nbsp;·&nbsp; **[⬇️ Download / دانلود](../../releases)**
 
 </div>
 
