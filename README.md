@@ -1,79 +1,6 @@
-<div align="center">
+### 📜 License & terms of use
+Anigma is free to download and use under the [Anigma Personal Use License](LICENSE). You may download it from this official repository and run an unmodified copy. Redistribution, modification, and publication of copies require prior written permission, subject to applicable third-party licenses and mandatory legal rights.
 
-<img src="icons/icon-512.png" width="140" alt="Anigma logo" />
-
-# Anigma · آنیگما
-
-### Your words. Your keys. Your privacy.
-### حرف‌های شما، کلیدهای شما، حریم خصوصی شما.
-
-<p>
-  <img alt="Android" src="https://img.shields.io/badge/Android-APK-35B4FF?style=for-the-badge&logo=android&logoColor=white&labelColor=00081A" />
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-Installer-35B4FF?style=for-the-badge&logo=windows&logoColor=white&labelColor=00081A" />
-  <img alt="Web" src="https://img.shields.io/badge/Web-PWA-35B4FF?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=00081A" />
-</p>
-<p>
-  <img alt="Offline first" src="https://img.shields.io/badge/Offline--first-✓-2ECC71?style=flat-square&labelColor=00081A" />
-  <img alt="No account" src="https://img.shields.io/badge/No%20account-✓-2ECC71?style=flat-square&labelColor=00081A" />
-  <img alt="End-to-end encryption" src="https://img.shields.io/badge/End--to--end%20encryption-AES--GCM-35B4FF?style=flat-square&labelColor=00081A" />
-  <img alt="Languages" src="https://img.shields.io/badge/Languages-فارسی%20%7C%20English-F5B942?style=flat-square&labelColor=00081A" />
-</p>
-
-<a href="#english">🇬🇧 English</a> &nbsp;·&nbsp; <a href="#persian">🇮🇷 فارسی</a> &nbsp;·&nbsp; <a href="../../releases">⬇️ Download / دانلود</a>
-
-
-</div>
-
----
-
-<a id="english"></a>
-## 🇬🇧 English
-
-### 🔐 What is Anigma?
-Anigma is a free app that keeps your messages and files private. You write something, Anigma locks it with the key of the person you choose, and only that person can open it. You can then send it through **any** channel you like — a messenger, email, SMS, a USB stick or a printed QR code — and it stays protected the whole way.
-
-Everything happens **on your own device**. There is no account to create, no server holding your data, and no tracking. Your keys are born on your device and stay there.
-
-### 🌍 Why we built it
-Anigma was created with a humanitarian purpose: **to protect the privacy and safety of everyday people.** Privacy is a basic human right. Journalists, aid workers, students, families, patients and anyone who simply values their personal space should be able to communicate with confidence — in their own language, on whatever device they have, even with a slow or closely watched connection. Strong protection should feel simple, and Anigma is designed to make it so.
-
-### ✨ Highlights
-| | |
-|---|---|
-| 🔒 **End-to-end encryption** | Messages and files are locked with modern, authenticated cryptography (AES-GCM, ECDH P-256, optional X25519). |
-| 🧠 **Strong password protection** | Your identity is guarded by a memory-hard function (Argon2id). |
-| 📴 **Offline-first** | Works without internet once installed. Nothing is uploaded. |
-| 📷 **QR contacts** | Add people by scanning a QR code and confirm them with a short verification code. |
-| 👥 **Encrypted groups** | Share with several people and remove members when needed. |
-| 💾 **Encrypted backup** | Back up your identity in a file only you can open. |
-| 🌐 **Two languages** | Full فارسی and English interface, with right-to-left support. |
-| 🎛️ **Simple & Advanced modes** | Easy for everyday use, with extra controls for experts. |
-| 📱💻 **Works everywhere** | Android, Windows, and any modern browser on phone, tablet or computer. |
-| ✅ **Trusted updates** | The app only accepts update notices carrying a valid digital signature. |
-
-### ⬇️ Download
-Get the newest version from the **[Releases](../../releases)** page.
-
-| Platform | File | Notes |
-|---|---|---|
-| 📱 Android | `Anigma.apk` | If asked, allow “install from this source”. |
-| 💻 Windows | `Anigma-Setup.exe` | If Windows shows a SmartScreen notice, choose *More info → Run anyway* after checking the checksum below. |
-
-> 💡 **Tip:** Each release lists a SHA-256 checksum. Comparing it with your downloaded file is a quick way to be sure it is exactly the file we published.
-
-### 🛡️ Your privacy at a glance
-- ✅ Everything is processed locally on your device.
-- ✅ No account, no ads, no analytics, no personal data collection.
-- ✅ Built on your platform's own trusted cryptography (Web Crypto API).
-- ℹ️ The app occasionally checks GitHub for signed update information. Like any web request, GitHub can see an IP address when this happens.
-
-### 🌱 Tips for the best experience
-- Choose a long, unique password — a few random words work well.
-- Keep your device and the app up to date.
-- Save an encrypted backup of your identity somewhere safe.
-
-### 📜 Terms of use
-Anigma is provided in good faith to help protect people's privacy and is provided "as is." The developers assume no responsibility for any illegal or unethical use of the program. Ordinary users who use Anigma to protect their privacy have no reason to worry
 
 ---
 
@@ -125,7 +52,7 @@ Anigma is provided in good faith to help protect people's privacy and is provide
 - دستگاه و برنامه را به‌روز نگه دارید.
 - یک نسخهٔ پشتیبان رمزگذاری‌شده از هویت خود را در جای امنی نگه دارید.
 
-### 📜 شرایط استفاده
-آنیگما با حسن‌نیت و برای کمک به حفاظت از حریم خصوصی مردم ارائه شده و «همان‌گونه که هست» عرضه می‌شود. سازندگان هیچ مسئولیتی در قبال استفادهٔ غیرقانونی یا غیراخلاقی از برنامه نمی‌پذیرند. کاربران عادی که برای حفاظت از حریم خصوصی خود از آنیگما استفاده می‌کنند جای هیچ نگرانی ندارند.
+### 📜 مجوز و شرایط استفاده
+آنیگما برای دانلود و استفاده رایگان است و تحت [مجوز اختصاصی استفادهٔ شخصی Anigma](LICENSE) ارائه می‌شود. می‌توانید آن را از مخزن رسمی دانلود و نسخهٔ بدون تغییر آن را اجرا کنید. بازنشر، انتشار نسخهٔ کپی یا تغییر‌یافته و ویرایش برنامه بدون اجازهٔ کتبی صاحب حقوق مجاز نیست؛ البته مجوزهای مستقل اجزای شخص ثالث و حقوق قانونیِ غیرقابل‌سلب همچنان معتبرند.
 
 </div>
