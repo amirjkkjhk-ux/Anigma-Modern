@@ -1,0 +1,29 @@
+{
+  "app": "anigma",
+  "version": "23.3",
+  "serviceWorkerCache": "anigma-v40",
+  "releaseId": "085780205bd075c08d92ee00ee2ad12e899437fd9494df7a8a35aa1dac6ba3d3",
+  "updateKey": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "yBtNTxSwSdxCYaTYh2dPlvZGyi3z9Nhynl9MaWYfghs",
+    "y": "oMdB_70ld3FqbRbeih2kqPbxKxP0uSn7A9HvVoLr3vo"
+  },
+  "files": {
+    "css/app.css": "4756822e4703a6e830962a8619e4977866820c1bcb043f421d389eb3f3d057ad",
+    "index.html": "dd0d1681bb2dca157a6349dbed754da3c16df8ecf5f08afde7d3882b2df708c1",
+    "js/argon2-client.js": "63859ffefe06391682c132176e6191514586716214c5a0a513668833b566dfcb",
+    "js/compat-check.js": "00c4ee345a37bdb614fc9567e36e809c05c3664b6bcbc7e552e2c21ef05fa2b4",
+    "js/container.js": "4f0be6e5a03de119b62073d9640f47f243abed9ac6ddee35dbfa13a8cb45e2c8",
+    "js/crypto.js": "d0c339688b1459f18ad2736612e87eec8e430697b76e4169085c540b1d7ec96f",
+    "js/groups-ui.js": "643cf9ead6b183d0f79812a8b62a07cb30077f5aca053c652b6e422763f65cd2",
+    "js/groups.js": "51f66061ae70d0a20542d98b14caf6a69e6ced19cab0f2c6e7014867ce2fec9c",
+    "js/i18n.js": "b82f238c563af2d24a3dfedf0a76d0d78c387f750cf473d4051179f931e18f6a",
+    "js/ui.js": "c7c87f185e924fcc2eea0c586ab3438ceb88edaf7f4b9620335394577464515e",
+    "js/update.js": "9fd13aa6104898e72a162a44a14a80735e0f574c4ec1e5e4072472d28ae3387c",
+    "js/worker.js": "c04d916590a143aec83786d4a6ef89f904e519aab04d1ddee2422903cbe4d30f",
+    "service-worker.js": "391899c12eb81f47f4a52ddcbfc375930ef7374307632f628047eb9721434f80",
+    "vendor/argon2id.js": "bcb46968af88cd4af4e490e7daeabc9f84daf36eccbff1f98ea9041e21f9f073",
+    "vendor/qrcode.min.js": "121fc385aab932ff749318b4dcec1482ec1ae2f357572981e2ed5da6431f2374"
+  }
+}
