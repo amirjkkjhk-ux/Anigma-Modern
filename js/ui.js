@@ -5,7 +5,7 @@
 // wires the DOM to those modules.
 // ====================================================================================
 
-const APP_VERSION = '23.2';
+const APP_VERSION = '23.3';
 
 // Security review #11 (clickjacking): the CSP's `frame-ancestors 'none'` only takes effect
 // as a real HTTP response header — browsers silently ignore it when set via the <meta> tag
@@ -874,8 +874,12 @@ function idAskPersistentStorage() {
 
 async function idShowDeriving() { idKdfBusyClass(true); updateStatus('status.id.deriving'); await new Promise(function (r) { setTimeout(r, 60); }); }
 // Maps a KDF failure to a plain message. Returns true when it handled the error.
-function idHandleKdfError(e, kdfName) {
+// `creating` = true when the failing step was making a NEW key (create / backup / restore-and-reseal): there the
+// problem is "Argon2id is missing, so nothing was created" — never "this identity can't be opened", and never a
+// silent switch to the weaker PBKDF2.
+function idHandleKdfError(e, kdfName, creating) {
   const m = e && e.message;
+  if (creating && m === 'argon2id-unavailable') { showError('status.id.argon2Required'); return true; }
   if (m === 'argon2id-memory') { showError('status.id.kdfMemory'); return true; }
   if (m === 'argon2id-unavailable' || m === 'argon2id-failed' || m === 'unknown-kdf') { showError('status.id.kdfUnavailable', { kdf: kdfName || 'argon2id' }); return true; }
   return false;
@@ -897,7 +901,7 @@ async function idCreateIdentity() {
 
     const salt = crypto.getRandomValues(new Uint8Array(16));
     await idShowDeriving();
-    const made = await AnigmaCrypto.deriveNewKey(pin, salt); // Argon2id (memory-hard); PBKDF2 only if Argon2id isn't loaded
+    const made = await AnigmaCrypto.deriveNewKey(pin, salt); // Argon2id only: throws 'argon2id-unavailable' rather than silently using PBKDF2
     const masterKey = made.key;
     const sealed = await AnigmaCrypto.sealStored(masterKey, 'identity', privPkcs8);
     const iv = sealed.iv, ctPriv = sealed.ct;
@@ -933,7 +937,7 @@ async function idCreateIdentity() {
     addLog('log.msg.idCreated');
     autolockArm();
   } catch (e) {
-    showError('status.id.error', { msg: (e && e.message) ? e.message : '' });
+    if (!idHandleKdfError(e, undefined, true)) showError('status.id.error', { msg: (e && e.message) ? e.message : '' });
   }
 }
 
@@ -1104,32 +1108,53 @@ async function idCopyPublicKey() {
   updateStatus(ok ? 'status.id.pubCopied' : 'status.copy.failed', null, !ok);
 }
 
-// Removes EVERY trace this origin holds: all localStorage/sessionStorage keys the app ever wrote
-// (including the "onboarded", language, backup-time and unlock-attempt markers — each of them is
-// evidence the app was used), the service worker registration and the offline copy in Cache Storage.
-// Flash storage cannot be securely overwritten from a web page, so this is deletion, not erasure:
-// a strong passphrase remains the real protection for anything recoverable from the device.
+// Removes every trace ANIGMA ITSELF holds on this device: the localStorage/sessionStorage keys it wrote (all of
+// them start with "anigma_" — including the "onboarded", language, backup-time and unlock-attempt markers, each of
+// which is evidence the app was used), ITS service-worker registration and ITS offline copy in Cache Storage
+// (caches named "anigma-…").
+//
+// It must NEVER touch anything that belongs to another app. A deployment can share an origin with other apps
+// (e.g. https://user.github.io/ hosting several projects, or localhost during development), and localStorage,
+// Cache Storage and service-worker registrations are all per-ORIGIN, not per-app. So this function deletes by
+// ownership — name prefix for storage and caches, scope + script name for the service worker — and never uses
+// localStorage.clear(), sessionStorage.clear(), caches.keys() "delete everything" or getRegistrations() "unregister
+// everything".
+//
+// Flash storage cannot be securely overwritten from a web page, so this is deletion, not erasure: a strong
+// passphrase remains the real protection for anything recoverable from the device.
+const ANIGMA_KEY_PREFIX = 'anigma_';      // every localStorage/sessionStorage key this app writes
+const ANIGMA_CACHE_PREFIX = 'anigma-';    // service-worker CACHE_NAME ('anigma-v39', …)
+const ANIGMA_SW_FILE = 'service-worker.js';
+function appOwnsStorageKey(k) { return typeof k === 'string' && k.indexOf(ANIGMA_KEY_PREFIX) === 0; }
+function appOwnsCacheName(n) { return typeof n === 'string' && n.indexOf(ANIGMA_CACHE_PREFIX) === 0; }
+// A registration is ours only if its scope is exactly this app's own folder and its script is our service-worker.js.
+function appOwnsServiceWorker(reg) {
+  try {
+    const base = new URL('./', location.href).href;
+    if (!reg || reg.scope !== base) return false;
+    const w = reg.active || reg.waiting || reg.installing;
+    if (!w || !w.scriptURL) return false;
+    return w.scriptURL === new URL(ANIGMA_SW_FILE, base).href;
+  } catch (e) { return false; }
+}
+function purgeOwnedKeys(store) {
+  const names = [];
+  for (let i = 0; i < store.length; i++) names.push(store.key(i));   // snapshot first: removing shifts indexes
+  names.forEach(function (k) { if (appOwnsStorageKey(k)) store.removeItem(k); });
+}
 async function appPurgeLocalTraces() {
-  try {
-    const names = [];
-    for (let i = 0; i < localStorage.length; i++) names.push(localStorage.key(i));
-    names.forEach(function (k) { if (k && /^anigma/i.test(k)) localStorage.removeItem(k); });
-  } catch (e) {}
-  try {
-    const names = [];
-    for (let i = 0; i < sessionStorage.length; i++) names.push(sessionStorage.key(i));
-    names.forEach(function (k) { if (k && /^anigma/i.test(k)) sessionStorage.removeItem(k); });
-  } catch (e) {}
+  try { purgeOwnedKeys(localStorage); } catch (e) {}
+  try { purgeOwnedKeys(sessionStorage); } catch (e) {}
   try {
     if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
       const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(function (r) { return r.unregister(); }));
+      await Promise.all(regs.filter(appOwnsServiceWorker).map(function (r) { return r.unregister(); }));
     }
   } catch (e) {}
   try {
     if (typeof caches !== 'undefined' && caches.keys) {
       const keys = await caches.keys();
-      await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      await Promise.all(keys.filter(appOwnsCacheName).map(function (k) { return caches.delete(k); }));
     }
   } catch (e) {}
 }
@@ -1147,7 +1172,8 @@ async function idEmergencyWipe() {
 }
 
 // Full reset: identity, contacts, and every saved preference (theme, language, sound,
-// "help seen") — everything this app has ever written to localStorage on this device.
+// "help seen") — everything THIS APP has ever written on this device (and nothing that belongs to other apps
+// sharing the same origin).
 // Distinct from Emergency wipe above, which only clears identity + contacts and leaves
 // preferences in place. Requires typing a confirmation word so it can't be triggered by
 // a stray double-click, then reloads to a guaranteed-clean state.
@@ -1161,7 +1187,6 @@ function idDeleteAllData() {
     updateStatus('confirm.deleteAll.mismatch', null, true);
     return;
   }
-  try { localStorage.clear(); } catch (e) {}
   appPurgeLocalTraces().then(function () { window.location.reload(); }, function () { window.location.reload(); });
 }
 
@@ -1193,7 +1218,7 @@ async function idExportIdentity() {
     addLog('log.msg.idExported');
     idNoteBackupDone();
   } catch (e) {
-    if (!idHandleKdfError(e)) showError('status.id.error', { msg: (e && e.message) ? e.message : '' });
+    if (!idHandleKdfError(e, undefined, true)) showError('status.id.error', { msg: (e && e.message) ? e.message : '' });
   }
 }
 
@@ -1217,7 +1242,14 @@ async function idImportIdentity() {
       return;
     }
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    const made = await AnigmaCrypto.deriveNewKey(pw, salt);
+    let made;
+    try { made = await AnigmaCrypto.deriveNewKey(pw, salt); }
+    catch (e) {
+      // Nothing has been written yet: the existing identity (if any) is untouched.
+      idWipeBuffer(restored.privPkcs8);
+      if (idHandleKdfError(e, undefined, true)) return;
+      throw e;
+    }
     const masterKey = made.key;
     const sealed = await AnigmaCrypto.sealStored(masterKey, 'identity', restored.privPkcs8);
     const iv = sealed.iv, ctPriv = sealed.ct;
@@ -1252,7 +1284,7 @@ async function idImportIdentity() {
     addLog('log.msg.idImported');
     autolockArm();
   } catch (e) {
-    showError('status.id.error', { msg: (e && e.message) ? e.message : '' });
+    if (!idHandleKdfError(e, undefined, true)) showError('status.id.error', { msg: (e && e.message) ? e.message : '' });
   }
 }
 
