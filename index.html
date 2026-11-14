@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-mode="simple" data-id-locked="1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#00081A">
+<!--
+  Content-Security-Policy — every inline onclick/onchange/oninput attribute that used to
+  live in this file has been moved into real addEventListener bindings (see
+  bindInlineHandlers() in js/ui.js), specifically so script-src can drop 'unsafe-inline'
+  and 'unsafe-eval' entirely: no attacker-supplied string can ever become executable script
+  here, whatever else goes wrong (an XSS in a future contact-name field, a bug in escapeHtml,
+  etc.) — it would still have nowhere to run.
+  style-src keeps 'unsafe-inline' because a number of static, developer-authored style=""
+  attributes remain (never populated from user/contact data — verified by inspection); CSS
+  injection is a much narrower attack surface than script injection, so this is a deliberate,
+  documented trade-off rather than an oversight. connect-src/object-src/base-uri/form-action
+  are locked down because this app never calls out to the network and has no <form>.
+  Delivered via <meta> here for deployment-agnostic static hosting; if you control the web
+  server, sending this as a real `Content-Security-Policy` HTTP response header instead is
+  stronger (it also covers `frame-ancestors`, which browsers ignore when set via <meta>).
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none';">
+<title data-i18n="doc.title">Anigma</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<!-- iOS ignores the manifest's icons array for "Add to Home Screen" and needs its own
+     link, as an opaque (non-transparent) PNG — see icons/apple-touch-icon.png. -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<noscript><div style="padding:24px;font-family:system-ui,sans-serif;line-height:1.9;text-align:center">Anigma needs JavaScript to work. Please enable it in your browser.<br>آنیگما برای کار کردن به جاوااسکریپت نیاز دارد. لطفاً آن را در مرورگر فعال کنید.</div></noscript>
+<div class="fx-bg" aria-hidden="true"></div>
+
+<div class="menu-overlay" id="menuOverlay"></div>
+<nav class="side-menu" id="sideMenu" aria-label="Menu">
+  <button id="jsb1" type="button" class="menu-close icon-anim" data-i18n-aria="menu.close" data-icon="close"></button>
+  <div class="menu-title" data-i18n="menu.title">Menu</div>
+
+  <div class="menu-item" style="cursor:default; justify-content:space-between;">
+    <span style="display:flex; align-items:center; gap:10px;" data-icon="palette"></span>
+    <span data-i18n="menu.theme" style="margin-inline-end:auto; margin-inline-start:8px;">Theme</span>
+    <select id="menuThemeSelect" style="border:none; background:var(--card-bg); padding:8px 10px; border-radius:8px;">
+      <option value="dark" data-i18n="menu.theme.dark">Dark</option>
+      <option value="light" data-i18n="menu.theme.light">Light</option>
+    </select>
+  </div>
+
+  <div class="menu-item" style="cursor:default; justify-content:space-between;">
+    <span style="display:flex; align-items:center; gap:10px;" data-icon="lock"></span>
+    <span data-i18n="menu.autolock" style="margin-inline-end:auto; margin-inline-start:8px;">Auto-lock</span>
+    <select id="menuAutolockSelect" style="border:none; background:var(--card-bg); padding:8px 10px; border-radius:8px;">
+      <option value="0" data-i18n="menu.autolock.never">Never</option>
+      <option value="1" data-i18n="menu.autolock.1">1 minute</option>
+      <option value="5" data-i18n="menu.autolock.5">5 minutes</option>
+      <option value="15" data-i18n="menu.autolock.15">15 minutes</option>
+      <option value="30" data-i18n="menu.autolock.30">30 minutes</option>
+    </select>
+  </div>
+
+  <div class="menu-item" style="cursor:default; justify-content:space-between;">
+    <span style="display:flex; align-items:center; gap:10px;" data-icon="sliders"></span>
+    <span data-i18n="menu.mode" style="margin-inline-end:auto; margin-inline-start:8px;">Mode</span>
+    <select id="menuModeSelect" style="border:none; background:var(--card-bg); padding:8px 10px; border-radius:8px;">
+      <option value="simple" data-i18n="menu.mode.simple">Simple</option>
+      <option value="advanced" data-i18n="menu.mode.advanced">Advanced</option>
+    </select>
+  </div>
+
+  <button id="jsb2" type="button" class="menu-item">
+    <span id="menuAudioIcon" class="icon-anim" data-icon="sound"></span>
+    <span id="menuAudioText" data-i18n="sound.on">Sound: on</span>
+  </button>
+
+  <button id="jsb3" type="button" class="menu-item">
+    <span class="icon-anim" data-icon="help"></span>
+    <span data-i18n="menu.help">Help</span>
+  </button>
+</nav>
+
+<div class="container">
+  <div class="top-bar">
+    <button id="jsb4" type="button" class="btn-sm" data-i18n-aria="menu.open">
+      <span class="icon-anim" data-icon="menu"></span>
+    </button>
+    <div class="top-bar-actions">
+      <button id="jsb5" type="button" class="btn-sm lang-switch" data-i18n-aria="lang.switch">
+        <span class="icon-anim" data-icon="globe"></span>
+        <span id="langBtnLabel" data-i18n="lang.other">فارسی</span>
+      </button>
+      <button id="jsb6" type="button" class="btn-sm help-dot icon-anim" data-i18n-aria="help.open" data-icon="help"></button>
+    </div>
+  </div>
+
+  <header class="header">
+    <h1><span data-icon="lock" class="icon-hero"></span><span data-i18n="app.name">Anigma</span></h1>
+  </header>
+
+  <div class="tabs">
+    <div class="brand"><img src="icons/icon-192.png" alt="" width="42" height="42"><span data-i18n="app.name">Anigma</span></div>
+    <button type="button" class="tab-btn active" id="tabMyKeyBtn"><span class="icon-anim" data-icon="identity"></span><span data-i18n="tabs.mykey">My key</span></button>
+    <button type="button" class="tab-btn" id="tabSecureBtn"><span class="icon-anim" data-icon="message"></span><span data-i18n="tabs.secure">Secure message</span></button>
+    <button type="button" class="tab-btn" id="tabFilesBtn"><span class="icon-anim" data-icon="file"></span><span data-i18n="tabs.files">Files</span></button>
+    <button type="button" class="tab-btn" id="tabContactsBtn"><span class="icon-anim" data-icon="contacts"></span><span data-i18n="tabs.contacts">Contacts</span></button>
+    <button type="button" class="tab-btn" id="tabGroupsBtn"><span class="icon-anim" data-icon="groups"></span><span data-i18n="tabs.groups">Groups</span></button>
+  </div>
+
+  <!-- ============================== MY KEY ============================== -->
+  <div class="tab-content active" id="panelMyKey">
+    <img class="hero-mark" src="icons/icon-512.png" alt="" width="180" height="180">
+    <p class="field-hint" data-i18n="identity.intro" style="margin-bottom:16px;">…</p>
+
+    <div id="idKeyLockedView" data-has-identity="0">
+      <p class="status-bar" id="idLockedStatusMsg" style="margin-bottom:14px;"></p>
+      <label data-i18n="identity.pin.placeholder" for="idPinInput">Password <button type="button" class="tip-btn" data-tip="tip.password">?</button></label>
+      <input type="password" id="idPinInput" data-i18n-placeholder="identity.pin.placeholder" autocomplete="off">
+      <p class="field-hint" data-i18n="identity.pin.rateLimitNote" style="margin-top:4px;">…</p>
+      <div class="strength-meter"><div class="strength-meter-fill" id="idPinStrengthFill"></div></div>
+      <div class="key-strength" id="idPinStrengthText"></div>
+
+      <div id="idCurveOptionRow" class="adv-only" style="display:none; margin-top:10px;">
+        <label data-i18n="identity.curve.label">Curve (new identity only) <button type="button" class="tip-btn" data-tip="tip.curve">?</button></label>
+        <select id="idCurveSelect">
+          <option value="p256" data-i18n="identity.curve.p256">P-256 (compatible, default)</option>
+          <option value="x25519" data-i18n="identity.curve.x25519">X25519 (modern)</option>
+        </select>
+      </div>
+
+      <div class="btn-group">
+        <button id="jsb7" type="button" class="btn-main btn-encrypt id-create-btn"><span data-icon="identity" class="icon-anim"></span><span data-i18n="identity.create">Create identity</span></button>
+        <button id="jsb8" type="button" class="btn-main btn-decrypt id-unlock-btn"><span data-icon="unlock" class="icon-anim"></span><span data-i18n="identity.unlock">Unlock identity</span></button>
+      </div>
+      <p class="field-hint" id="idUnlockCooldownNote" role="status" style="min-height:1.4em;"></p>
+      <div class="id-startover-row simple-only">
+        <button id="idStartOverBtn" type="button" class="btn-link" data-i18n="identity.startOver">Forgot password? Start over…</button>
+        <button type="button" class="tip-btn" data-tip="tip.startOver">?</button>
+      </div>
+    </div>
+
+    <div id="idKeyUnlockedView" style="display:none;">
+      <div class="banner banner-notice" id="backupReminderBanner" style="display:none;">
+        <span class="icon" data-icon="cloudUpload"></span>
+        <span><span data-i18n="identity.backup.reminderText">…</span>
+        <br><button id="jsb9" type="button" class="btn-sm" style="margin-top:6px;"><span data-i18n="identity.backup.reminderDismiss">Remind me later</span></button></span>
+      </div>
+
+      <!-- Advanced only: the raw fingerprint and the manual compare tool. In Simple mode the same
+           check lives behind "How do I make sure this is really them?" (verify modal). -->
+      <div class="adv-only">
+        <label data-i18n="identity.fp.label">Fingerprint</label>
+        <p style="font-family:'JetBrains Mono',monospace; font-size:14px; letter-spacing:0.02em; padding:12px 14px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px;" id="idMyFingerprint"></p>
+
+        <div style="margin-top:8px;">
+          <button id="jsb10" type="button" class="btn-sm"><span data-icon="fingerprint" class="icon-anim"></span><span data-i18n="fp.compare.toggle">Compare with someone</span></button>
+          <div id="fpCompareBox" style="display:none; margin-top:8px;">
+            <p class="field-hint" data-i18n="fp.compare.explain" style="margin-top:0;">…</p>
+            <textarea id="fpCompareInput" data-i18n-placeholder="fp.compare.placeholder" class="ta-compact"></textarea>
+            <button id="jsb11" type="button" class="btn-sm" style="margin-top:6px;"><span data-i18n="fp.compare.action">Compare</span></button>
+            <p id="fpCompareResult" style="font-family:'JetBrains Mono',monospace; font-size:14px; letter-spacing:0.06em; margin-top:8px; word-break:break-all;"></p>
+          </div>
+        </div>
+      </div>
+
+      <label data-i18n="identity.pub.label" style="margin-top:16px;">Public key <button type="button" class="tip-btn" data-tip="tip.myId">?</button></label>
+      <textarea id="idMyPublicKey" class="adv-only" readonly style="height:70px;"></textarea>
+      <div class="btn-group id-share-actions">
+        <button id="jsb13" type="button" class="btn-main btn-encrypt"><span data-icon="qr" class="icon-anim"></span><span data-i18n="identity.myQR">QR</span></button>
+        <button id="idShareBtn" type="button" class="btn-main btn-decrypt" style="display:none;"><span data-icon="share" class="icon-anim"></span><span data-i18n="identity.share">Share</span></button>
+        <button id="jsb12" type="button" class="btn-main btn-decrypt"><span data-icon="copy" class="icon-anim"></span><span data-i18n="identity.copyPub">Copy</span></button>
+      </div>
+
+      <div class="btn-group">
+        <button id="jsb14" type="button" class="btn-main btn-decrypt"><span data-icon="lock" class="icon-anim"></span><span data-i18n="identity.lock">Lock / sign out</span></button>
+      </div>
+
+      <!-- ---------------- Backup & restore ---------------- -->
+      <details class="section-card fold" id="backupDetails">
+        <summary class="section-card-title"><span class="icon" data-icon="cloudUpload"></span><span data-i18n="identity.section.backup">Backup &amp; restore</span><button type="button" class="tip-btn" data-tip="tip.backup">?</button><span class="icon fold-chevron" data-icon="chevron"></span></summary>
+        <label data-i18n="identity.backup.exportPasswordLabel" style="margin-top:12px;">Export password</label>
+        <input type="password" id="idExportPassword" data-i18n-placeholder="identity.backup.exportPasswordPlaceholder" autocomplete="off">
+        <p class="field-hint" data-i18n="identity.backup.warning">…</p>
+        <div class="btn-group" style="margin:10px 0;">
+          <button id="jsb15" type="button" class="btn-main btn-encrypt"><span data-icon="download" class="icon-anim"></span><span data-i18n="identity.backup.doExport">Download backup file</span></button>
+        </div>
+        <label data-i18n="identity.backup.importPasswordLabel" style="margin-top:10px;">Restore password</label>
+        <input type="password" id="idImportPassword" data-i18n-placeholder="identity.backup.importPasswordPlaceholder" autocomplete="off">
+        <div class="key-row">
+          <input type="file" id="idImportFile" accept="application/json" style="flex:1 1 200px;">
+          <button id="jsb16" type="button" class="btn-sm"><span data-icon="upload" class="icon-anim"></span><span data-i18n="identity.backup.doImport">Restore identity</span></button>
+        </div>
+      </details>
+
+      <!-- ---------------- Danger zone ---------------- -->
+      <div class="section-card danger-zone adv-only">
+        <div class="section-card-title"><span class="icon" data-icon="alertTriangle"></span><span data-i18n="identity.section.danger">Danger zone</span></div>
+
+        <div class="danger-row">
+          <div class="danger-row-text">
+            <div class="danger-row-title"><span data-i18n="identity.wipe">Emergency wipe</span></div>
+            <p class="field-hint" data-i18n="identity.wipe.hint">…</p>
+          </div>
+          <button id="jsb17" type="button" class="btn-sm btn-danger"><span data-icon="wipe" class="icon-anim"></span><span data-i18n="identity.wipe">Emergency wipe</span></button>
+        </div>
+
+        <div class="danger-row">
+          <div class="danger-row-text">
+            <div class="danger-row-title"><span data-i18n="identity.deleteAll">Delete identity &amp; all data</span></div>
+            <p class="field-hint" data-i18n="identity.deleteAll.hint">…</p>
+          </div>
+          <button id="jsb18" type="button" class="btn-sm btn-danger"><span data-icon="deleteAll" class="icon-anim"></span><span data-i18n="identity.deleteAll">Delete identity &amp; all data</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== CONTACTS ============================== -->
+  <div class="tab-content" id="panelContacts">
+    <div class="section-card" style="margin-top:0;">
+      <div class="section-card-title"><span class="icon" data-icon="personAdd"></span><span data-i18n="contacts.addLabel">Add a new contact</span><button type="button" class="tip-btn" data-tip="tip.scan">?</button></div>
+
+      <!-- QR-first: scanning and showing a QR code are the two big, obvious ways in. Pasting a
+           key by hand is still here, but tucked away as the secondary fallback below. -->
+      <div class="btn-group qr-first">
+        <button id="scanQrBtn" type="button" class="btn-main btn-encrypt"><span data-icon="scan" class="icon-anim"></span><span data-i18n="contacts.scanQR">Scan QR code</span></button>
+        <button id="showMyQrBtn" type="button" class="btn-main btn-decrypt"><span data-icon="qr" class="icon-anim"></span><span data-i18n="contacts.showQR">Show my QR code</span></button>
+      </div>
+      <p class="field-hint" id="scanUnsupportedNote" style="display:none;" data-i18n="contacts.scanUnsupported">…</p>
+      <div class="banner banner-info" id="idGotIdBanner" style="display:none;" role="status">
+        <span data-icon="check"></span><span data-i18n="contacts.gotId">…</span>
+      </div>
+
+      <input type="text" id="idNewContactAlias" data-i18n-placeholder="contacts.aliasPlaceholder" style="margin-bottom:8px; margin-top:6px;">
+      <details class="fold" id="contactPasteDetails">
+        <summary><span data-i18n="contacts.pasteInstead">Paste a public key instead</span><span class="icon fold-chevron" data-icon="chevron"></span></summary>
+        <textarea id="idNewContactPubKey" data-i18n-placeholder="contacts.pubPlaceholder" class="ta-compact" style="margin-top:8px;"></textarea>
+      </details>
+      <div class="btn-group" style="margin-bottom:10px;">
+        <button id="jsb19" type="button" class="btn-main btn-encrypt"><span data-icon="personAdd" class="icon-anim"></span><span data-i18n="contacts.add">Add contact</span></button>
+      </div>
+
+      <div class="banner banner-verified" id="idContactAddedBanner" style="display:none;" role="status">
+        <span data-icon="check"></span>
+        <span><b data-i18n="contacts.addedTitle">Contact added</b><br>
+        <button id="idHowVerifyBtn" type="button" class="btn-link" data-i18n="contacts.howVerify">How do I make sure this is really them?</button></span>
+      </div>
+      <div class="banner banner-info adv-only" id="idPendingFingerprint" style="display:none;">
+        <span data-icon="shield"></span>
+        <span><span data-i18n="contacts.pendingTitle">Fingerprint:</span> <b id="idPendingFingerprintText" style="font-family:'JetBrains Mono',monospace;"></b><br><span data-i18n="contacts.pendingHint" style="font-size:11px;">…</span></span>
+      </div>
+    </div>
+
+    <label style="margin-top:18px;" data-i18n="contacts.listLabel">Contacts</label>
+    <div id="idContactsList"></div>
+  </div>
+
+  <!-- ============================== SECURE MESSAGE ============================== -->
+  <!-- data-smart is "encrypt" or "decrypt", set from what is typed/pasted (see secUpdateSmartUI()).
+       .enc-only / .dec-only parts show only in the matching state. -->
+  <div class="tab-content" id="panelSecure" data-smart="encrypt">
+    <div class="split"><div class="split-side">
+      <div class="section-card" id="secRecipientCard" style="margin-top:0;">
+      <div class="section-card-title"><span class="icon" data-icon="contacts"></span><span data-i18n="secure.recipientMode">Recipient</span><button type="button" class="tip-btn" data-tip="tip.recipient">?</button></div>
+
+      <div class="radio-row">
+        <button type="button" class="radio-chip active" id="secRecipPasteBtn" data-i18n="secure.recipientMode.paste">Paste a public key</button>
+        <button type="button" class="radio-chip" id="secRecipContactBtn" data-i18n="secure.recipientMode.contact">From my contacts</button>
+      </div>
+
+      <div id="secRecipPasteWrap" style="margin-top:8px;">
+        <textarea id="secPastePubKey" data-i18n-placeholder="secure.pastePubPlaceholder" class="ta-compact"></textarea>
+        <div class="banner banner-warn" id="secPasteFpBox" style="display:none;">
+          <span data-icon="shield"></span>
+          <span><span data-i18n="secure.pasteFpLabel">Fingerprint:</span> <b id="secPasteFpText" style="font-family:'JetBrains Mono',monospace;"></b><br><span data-i18n="secure.pasteFpWarning" style="font-size:11px;">…</span>
+          <br><button id="jsb20" type="button" class="btn-sm" style="margin-top:8px;"><span data-icon="personAdd" class="icon-anim"></span><span data-i18n="secure.saveAsContact">Save as contact</span></button></span>
+        </div>
+      </div>
+
+      <div id="secRecipContactWrap" style="display:none; margin-top:8px;">
+        <select id="idContactSelect" style="width:100%;"></select>
+      </div>
+      <div id="secNoContacts" style="display:none; margin-top:8px;">
+        <p class="field-hint" data-i18n="secure.noContacts" style="margin-top:0;">…</p>
+        <button id="secAddContactBtn" type="button" class="btn-sm" style="margin-top:8px;"><span data-icon="personAdd" class="icon-anim"></span><span data-i18n="secure.addContact">Add a contact</span></button>
+      </div>
+
+      <div class="adv-only" id="secAnonWrap" style="margin-top:14px;">
+        <div class="switch-row" style="margin-bottom:0;">
+          <span class="switch-label"><span data-i18n="secure.anonymous.label">Send anonymously</span><button type="button" class="tip-btn" data-tip="tip.anonymous">?</button></span>
+          <span class="switch-end"><span class="switch-state" id="secAnonState" aria-hidden="true"></span><button type="button" class="switch-toggle" id="secAnonToggle" role="switch" aria-checked="false" data-i18n-aria="secure.anonymous.label"></button></span>
+        </div>
+        <p class="field-hint" id="secAnonHint" style="display:none;" data-i18n="secure.anonymous.hint"></p>
+      </div>
+    </div>
+
+    <div class="section-card" id="secPipeCard">
+        <div class="section-card-title"><span data-i18n="pipe.title">How it travels</span></div>
+        <ol class="pipe2" id="secPipe" aria-live="polite">
+          <li class="ps" id="psYou" data-state="idle"><span class="ps-wire" aria-hidden="true"><i></i></span><span class="ps-dot"><span data-icon="message"></span></span><div class="ps-body"><b class="ps-title" data-i18n="pipe.you">Your message</b><span class="ps-line" id="psYouLine"></span><span class="ps-sub adv-only" id="psYouSub"></span></div></li>
+          <li class="ps" id="psEnc" data-state="idle"><span class="ps-wire" aria-hidden="true"><i></i></span><span class="ps-dot"><span data-icon="lock"></span></span><div class="ps-body"><b class="ps-title" data-i18n="pipe.enc">Encrypted</b><span class="ps-line" id="psEncLine"></span><span class="ps-bar" aria-hidden="true"><i></i></span><span class="ps-sub adv-only" id="psEncSub"></span></div></li>
+          <li class="ps" id="psThem" data-state="idle"><span class="ps-dot"><span data-icon="shield"></span></span><div class="ps-body"><b class="ps-title" data-i18n="pipe.them">Recipient only</b><span class="ps-line" id="psThemLine"></span><span class="ps-sub adv-only" id="psThemSub"></span></div></li>
+        </ol>
+      </div>
+      </div><div class="split-main">
+      <label data-i18n="secure.inputLabel">Message</label>
+    <textarea id="secureInput" data-i18n-placeholder="secure.inputPlaceholder" style="height:110px;"></textarea>
+    <p class="smart-hint" id="secDetectHint" aria-live="polite"></p>
+    <button id="secForceEncBtn" type="button" class="btn-link adv-only" style="display:none;" data-i18n="secure.detect.encryptAnyway">Encrypt it anyway</button>
+
+    <!-- One smart button: its label/icon follow what is in the box (plain text -> encrypt,
+         an Anigma package -> decrypt). -->
+    <div class="btn-group">
+      <button id="secSmartBtn" type="button" class="btn-main btn-encrypt"><span id="secSmartIcon" data-icon="lock" class="icon-anim"></span><span id="secSmartLabel" data-i18n="secure.action.encrypt">Encrypt</span></button>
+    </div>
+
+    <!-- Advanced-only decrypt controls (who to try as the claimed sender). -->
+    <details class="section-card fold more-options adv-only dec-only" id="secMoreOptions">
+      <summary class="section-card-title"><span class="icon" data-icon="sliders"></span><span data-i18n="more.title">More options</span><span class="icon fold-chevron" data-icon="chevron"></span></summary>
+      <div class="more-body">
+        <div class="dec-only">
+          <label data-i18n="secure.claimedSenderLabel" style="margin-top:0;">Claimed sender <button type="button" class="tip-btn" data-tip="tip.claimedSender">?</button></label>
+          <div class="radio-row">
+            <button type="button" class="radio-chip active" id="secSenderAutoBtn" data-i18n="secure.claimedSenderMode.auto">Automatic (try my contacts)</button>
+            <button type="button" class="radio-chip" id="secSenderContactBtn" data-i18n="secure.claimedSenderMode.contact">One of my contacts</button>
+            <button type="button" class="radio-chip" id="secSenderPasteBtn" data-i18n="secure.claimedSenderMode.paste">Paste their public key</button>
+            <button type="button" class="radio-chip" id="secSenderNoneBtn" data-i18n="secure.claimedSenderMode.none">Unknown / anonymous only</button>
+          </div>
+          <div id="secSenderAutoWrap"></div>
+          <div id="secSenderContactWrap" style="display:none;"><select id="idClaimedSenderSelect" style="width:100%;"></select></div>
+          <div id="secSenderPasteWrap" style="display:none;"><textarea id="secSenderPasteKey" class="ta-compact"></textarea></div>
+          <div id="secSenderNoneWrap" style="display:none;"><p class="field-hint" data-i18n="secure.claimedSenderMode.none">…</p></div>
+        </div>
+      </div>
+    </details>
+
+    <div id="secBanner" class="banner" style="display:none;" role="status"></div>
+
+    <!-- Shown only when automatic sender matching found nobody (see secDecryptAuto()). -->
+    <div class="section-card" id="secFallback" style="display:none;">
+      <div class="section-card-title"><span class="icon" data-icon="fingerprint"></span><span data-i18n="secure.fallback.title">Who sent this?</span></div>
+      <p class="field-hint" data-i18n="secure.fallback.text" style="margin-top:0;">…</p>
+      <textarea id="secFallbackKey" data-i18n-placeholder="secure.fallback.placeholder" class="ta-compact" style="margin-top:8px;"></textarea>
+      <button id="secFallbackRetryBtn" type="button" class="btn-sm" style="margin-top:8px;"><span data-icon="refresh" class="icon-anim"></span><span data-i18n="secure.fallback.retry">Try again</span></button>
+    </div>
+
+    <label data-i18n="secure.outputLabel">Result</label>
+    <textarea id="secureOutput" readonly style="height:110px;"></textarea>
+    <div class="key-row">
+      <button id="jsb23" type="button" class="btn-sm"><span data-icon="copy" class="icon-anim"></span><span data-i18n="secure.copyOut">Copy result</span></button>
+      <button id="secShareBtn" type="button" class="btn-sm" style="display:none;"><span data-icon="share" class="icon-anim"></span><span data-i18n="secure.share">Share</span></button>
+      <button id="jsb24" type="button" class="btn-sm adv-only"><span data-icon="qr" class="icon-anim"></span><span data-i18n="qr.title.text">QR</span></button>
+    </div>
+  </div></div>
+  </div>
+
+  <!-- ============================== FILES ============================== -->
+  <div class="tab-content" id="panelFiles">
+    <div class="section-card" style="margin-top:0;">
+      <div class="section-card-title"><span class="icon" data-icon="fileShield"></span><span data-i18n="files.section.select">Select files</span></div>
+      <div class="file-dropzone" id="filesDropzone" tabindex="0">
+        <span data-icon="upload" class="icon-drop"></span>
+        <span class="dz-main" data-i18n="files.dropzone.label">Click to choose files or a folder, or drop them here</span>
+        <span class="dz-note" data-i18n="files.dropzone.note">…</span>
+      </div>
+      <input type="file" id="filesInput" multiple style="display:none;">
+      <input type="file" id="folderInput" webkitdirectory directory style="display:none;">
+      <div class="key-row" style="margin-top:-8px;">
+        <button id="jsb25" type="button" class="btn-sm"><span data-icon="file" class="icon-anim"></span><span data-i18n="files.pickFiles">Choose files</span></button>
+        <button id="jsb26" type="button" class="btn-sm"><span data-icon="folder" class="icon-anim"></span><span data-i18n="files.pickFolder">Choose a folder</span></button>
+        <button id="jsb27" type="button" class="btn-sm"><span data-icon="eraser" class="icon-anim"></span><span data-i18n="log.clear">Clear</span></button>
+      </div>
+
+      <div class="log-title" id="filesManifestTitle" style="margin-top:14px;"></div>
+      <div class="file-manifest" id="filesManifestBox" style="display:none;"></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title"><span class="icon" data-icon="lock"></span><span data-i18n="files.section.encrypt">Encrypt</span></div>
+      <label data-i18n="secure.recipientMode">Recipient <button type="button" class="tip-btn" data-tip="tip.multiRecipient">?</button></label>
+      <div class="radio-row">
+        <button type="button" class="radio-chip active" id="fileRecipPasteBtn" data-i18n="files.recipientMode.paste">Paste a public key</button>
+        <button type="button" class="radio-chip" id="fileRecipContactsBtn" data-i18n="files.recipientMode.contacts">My contacts</button>
+      </div>
+
+      <div id="fileRecipPasteWrap" style="margin-top:8px;">
+        <textarea id="fileRecipPasteKey" data-i18n-placeholder="secure.pastePubPlaceholder" class="ta-compact"></textarea>
+        <div class="banner banner-warn" id="fileRecipPasteFpBox" style="display:none;">
+          <span data-icon="shield"></span>
+          <span><span data-i18n="secure.pasteFpLabel">Fingerprint:</span> <b id="fileRecipPasteFpText" style="font-family:'JetBrains Mono',monospace;"></b></span>
+        </div>
+      </div>
+
+      <div id="fileRecipContactsWrap" style="display:none; margin-top:8px;">
+        <div id="fileContactsCheckboxList"></div>
+      </div>
+
+
+      <details class="fold more-options adv-only" id="filesMoreEnc">
+        <summary><span class="icon" data-icon="sliders"></span><span data-i18n="more.title">More options</span><span class="icon fold-chevron" data-icon="chevron"></span></summary>
+        <div class="more-body">
+          <label data-i18n="files.compression.label" style="margin-top:0;">Compression <button type="button" class="tip-btn" data-tip="tip.compression">?</button></label>
+          <select id="fileCompressionSelect" style="width:100%;">
+            <option value="none" data-i18n="files.compression.none">None</option>
+            <option value="smart" data-i18n="files.compression.smart">Smart</option>
+            <option value="all" data-i18n="files.compression.all">All</option>
+          </select>
+
+          <label id="fileChunkSizeLabel" style="margin-top:14px;"><span id="fileChunkSizeLabelText">Chunk size</span><button type="button" class="tip-btn" data-tip="tip.chunkSize">?</button></label>
+          <input type="range" id="fileChunkSizeRange" min="1" max="16" value="4" step="1" style="width:100%;">
+
+          <div class="switch-row" style="margin-top:10px;">
+            <span class="switch-label"><span data-i18n="files.roundSize.label">Round final size to 16 MB</span><button type="button" class="tip-btn" data-tip="tip.roundSize">?</button></span>
+            <button type="button" class="switch-toggle" id="fileRoundSizeToggle" role="switch" aria-checked="false"></button>
+          </div>
+        </div>
+      </details>
+
+      <div class="btn-group">
+        <button type="button" class="btn-main btn-encrypt" id="fileEncryptBtn"><span data-icon="lock" class="icon-anim"></span><span data-i18n="files.encryptBtn">Encrypt and save</span></button>
+      </div>
+
+      <div class="progress-wrap" id="filesProgressWrap" style="display:none;">
+        <div class="progress-track"><div class="progress-fill" id="filesProgressFill"></div></div>
+        <div class="progress-meta" id="filesProgressMeta"></div>
+        <p class="field-hint" data-i18n="files.wakeLockNote" style="margin-top:6px;">…</p>
+        <div class="btn-group">
+          <button id="jsb28" type="button" class="btn-main btn-decrypt" style="color:var(--danger); border-color:var(--danger);"><span data-icon="cancel" class="icon-anim"></span><span data-i18n="files.cancel">Cancel</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title"><span class="icon" data-icon="unlock"></span><span data-i18n="files.section.decrypt">Decrypt</span><button type="button" class="tip-btn" data-tip="tip.largeFiles">?</button></div>
+
+      <details class="fold more-options adv-only" id="filesMoreDec">
+        <summary><span class="icon" data-icon="sliders"></span><span data-i18n="more.title">More options</span><span class="icon fold-chevron" data-icon="chevron"></span></summary>
+        <div class="more-body">
+          <label data-i18n="secure.claimedSenderLabel" style="margin-top:0;">Claimed sender <button type="button" class="tip-btn" data-tip="tip.claimedSender">?</button></label>
+          <div class="radio-row">
+            <button type="button" class="radio-chip active" id="fileSenderAutoBtn" data-i18n="secure.claimedSenderMode.auto">Automatic (try my contacts)</button>
+            <button type="button" class="radio-chip" id="fileSenderContactBtn" data-i18n="secure.claimedSenderMode.contact">One of my contacts</button>
+            <button type="button" class="radio-chip" id="fileSenderPasteBtn" data-i18n="secure.claimedSenderMode.paste">Paste their public key</button>
+          </div>
+          <div id="fileSenderAutoWrap"></div>
+          <div id="fileSenderContactWrap" style="display:none;"><select id="fileSenderContactSelect" style="width:100%;"></select></div>
+          <div id="fileSenderPasteWrap" style="display:none;"><textarea id="fileSenderPasteKey" class="ta-compact"></textarea></div>
+        </div>
+      </details>
+
+      <div class="btn-group">
+        <button type="button" class="btn-main btn-decrypt" id="filesDecryptTrigger"><span data-icon="unlock" class="icon-anim"></span><span data-i18n="files.decryptBtn">Choose package to decrypt</span></button>
+      </div>
+      <input type="file" id="filesDecryptInput" accept=".anigma" style="display:none;">
+
+      <!-- Shown only when automatic sender matching found nobody (see filesHandleDecryptFile()). -->
+      <div id="fileSenderFallback" style="display:none;">
+        <div class="section-card-title" style="margin-top:6px;"><span class="icon" data-icon="fingerprint"></span><span data-i18n="secure.fallback.title">Who sent this?</span></div>
+        <p class="field-hint" data-i18n="secure.fallback.text" style="margin-top:0;">…</p>
+        <textarea id="fileFallbackKey" data-i18n-placeholder="secure.fallback.placeholder" class="ta-compact" style="margin-top:8px;"></textarea>
+        <button id="fileFallbackRetryBtn" type="button" class="btn-sm" style="margin-top:8px;"><span data-icon="refresh" class="icon-anim"></span><span data-i18n="secure.fallback.retry">Try again</span></button>
+      </div>
+    </div>
+  </div>
+
+<!-- ============================== GROUPS ============================== -->
+<!-- Deliberately its OWN section, not a "recipient" picked from Secure/Files — see
+     docs/groups-spec-v1.md. Everything (create, join, invite, remove, encrypt, decrypt)
+     happens here; js/groups-ui.js owns this whole panel. -->
+<div class="tab-content" id="panelGroups">
+
+  <div id="groupsListView">
+    <div class="section-card" style="margin-top:0;">
+      <div class="section-card-title"><span class="icon" data-icon="groups"></span><span data-i18n="groups.title">Groups</span><button type="button" class="tip-btn" data-tip="tip.groups">?</button></div>
+      <p class="field-hint" style="margin-top:0;" data-i18n="groups.intro">…</p>
+      <div class="btn-group">
+        <button id="groupsCreateShowBtn" type="button" class="btn-main btn-encrypt"><span data-icon="groups" class="icon-anim"></span><span data-i18n="groups.create.show">Create a group</span></button>
+        <button id="groupsJoinShowBtn" type="button" class="btn-main btn-decrypt"><span data-icon="personAdd" class="icon-anim"></span><span data-i18n="groups.join.show">Join a group</span></button>
+      </div>
+    </div>
+
+    <div class="section-card" id="groupsCreateForm" style="display:none;">
+      <div class="section-card-title"><span data-i18n="groups.create.title">Create a group</span></div>
+      <label data-i18n="groups.create.name.label">Group name</label>
+      <input type="text" id="groupsNewName" data-i18n-placeholder="groups.create.name.placeholder">
+      <label style="margin-top:10px;" data-i18n="groups.create.capacity.label">Expected size</label>
+      <select id="groupsNewCapacity">
+        <option value="32" data-i18n="groups.create.capacity.small">Small — up to 32 people, ever</option>
+        <option value="64" selected data-i18n="groups.create.capacity.medium">Medium — up to 64 people, ever</option>
+        <option value="128" data-i18n="groups.create.capacity.large">Large — up to 128 people, ever</option>
+      </select>
+      <p class="field-hint" data-i18n="groups.create.capacity.hint">…</p>
+      <div class="btn-group"><button id="groupsCreateSubmitBtn" type="button" class="btn-main btn-encrypt"><span data-icon="groups" class="icon-anim"></span><span data-i18n="groups.create.submit">Create</span></button></div>
+    </div>
+
+    <div class="section-card" id="groupsJoinForm" style="display:none;">
+      <div class="section-card-title"><span data-i18n="groups.join.title">Join a group</span></div>
+      <p class="field-hint" style="margin-top:0;" data-i18n="groups.join.hint">…</p>
+      <textarea id="groupsJoinInput" data-i18n-placeholder="groups.join.placeholder" style="height:90px;"></textarea>
+      <div class="key-row" style="margin-top:8px;">
+        <input type="file" id="groupsJoinFile" accept="application/json,.json,.txt" style="flex:1 1 200px;">
+      </div>
+      <div class="btn-group" style="margin-top:10px;"><button id="groupsJoinSubmitBtn" type="button" class="btn-main btn-decrypt"><span data-icon="personAdd" class="icon-anim"></span><span data-i18n="groups.join.submit">Join</span></button></div>
+    </div>
+
+    <label style="margin-top:18px;" data-i18n="groups.list.label">Your groups</label>
+    <div id="groupsList"></div>
+  </div>
+
+  <div id="groupsDetailView" style="display:none;">
+    <button id="groupsBackBtn" type="button" class="btn-link"><span data-icon="chevron" class="icon-anim" style="transform:rotate(90deg); display:inline-block;"></span><span data-i18n="groups.back">Back to groups</span></button>
+    <h2 id="groupsDetailName" style="margin:10px 0 2px;"></h2>
+    <p class="field-hint" id="groupsDetailMeta" style="margin-top:0;"></p>
+
+    <!-- admin only -->
+    <div class="section-card" id="groupsInviteCard" style="display:none;">
+      <div class="section-card-title"><span class="icon" data-icon="personAdd"></span><span data-i18n="groups.invite.title">Invite someone</span></div>
+      <label data-i18n="groups.invite.alias.label">Their name <span style="font-weight:400;" data-i18n="groups.invite.alias.labelSub">(just for your own list)</span></label>
+      <input type="text" id="groupsInviteAlias" data-i18n-placeholder="groups.invite.alias.placeholder">
+      <label style="margin-top:10px;" data-i18n="groups.invite.pubkey.label">Their public key</label>
+      <textarea id="groupsInvitePubKey" data-i18n-placeholder="groups.invite.pubkey.placeholder" class="ta-compact"></textarea>
+      <div class="btn-group" style="margin-top:8px;"><button id="groupsInviteSubmitBtn" type="button" class="btn-main btn-encrypt"><span data-icon="personAdd" class="icon-anim"></span><span data-i18n="groups.invite.submit">Create invite</span></button></div>
+      <div id="groupsInviteOutputWrap" style="display:none; margin-top:10px;">
+        <p class="field-hint" style="margin-top:0;" data-i18n="groups.invite.output.hint">…</p>
+        <textarea id="groupsInviteOutput" readonly style="height:90px;"></textarea>
+        <div class="key-row" style="margin-top:6px;">
+          <button id="groupsInviteCopyBtn" type="button" class="btn-sm"><span data-icon="copy" class="icon-anim"></span><span data-i18n="groups.copy">Copy</span></button>
+          <button id="groupsInviteDownloadBtn" type="button" class="btn-sm"><span data-icon="download" class="icon-anim"></span><span data-i18n="groups.download">Download</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card" id="groupsMembersCard" style="display:none;">
+      <div class="section-card-title"><span class="icon" data-icon="contacts"></span><span data-i18n="groups.members.title">Members</span></div>
+      <div id="groupsMembersList"></div>
+    </div>
+
+    <!-- shown right after a remove, admin only -->
+    <div class="section-card" id="groupsNewCardOutputWrap" style="display:none;">
+      <div class="section-card-title"><span class="icon" data-icon="refresh"></span><span data-i18n="groups.newCard.title">Updated group card</span></div>
+      <p class="field-hint" style="margin-top:0;" data-i18n="groups.newCard.hint">…</p>
+      <textarea id="groupsNewCardOutput" readonly style="height:90px;"></textarea>
+      <div class="key-row" style="margin-top:6px;">
+        <button id="groupsNewCardCopyBtn" type="button" class="btn-sm"><span data-icon="copy" class="icon-anim"></span><span data-i18n="groups.copy">Copy</span></button>
+        <button id="groupsNewCardDownloadBtn" type="button" class="btn-sm"><span data-icon="download" class="icon-anim"></span><span data-i18n="groups.download">Download</span></button>
+      </div>
+    </div>
+
+    <!-- member only -->
+    <div class="section-card" id="groupsApplyCardCard" style="display:none;">
+      <div class="section-card-title"><span class="icon" data-icon="refresh"></span><span data-i18n="groups.applyCard.title">Updated card</span></div>
+      <p class="field-hint" style="margin-top:0;" data-i18n="groups.applyCard.hint">…</p>
+      <textarea id="groupsApplyCardInput" data-i18n-placeholder="groups.applyCard.placeholder" style="height:80px;"></textarea>
+      <div class="btn-group" style="margin-top:8px;"><button id="groupsApplyCardSubmitBtn" type="button" class="btn-main btn-decrypt"><span data-icon="refresh" class="icon-anim"></span><span data-i18n="groups.applyCard.submit">Apply</span></button></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title"><span class="icon" data-icon="lock"></span><span data-i18n="groups.file.enc.title">Send a file</span></div>
+      <input type="file" id="groupsFileEncInput" multiple style="width:100%;">
+      <div id="groupsFileEncSelected" class="field-hint" style="margin-top:6px;"></div>
+      <div class="btn-group" style="margin-top:8px;"><button id="groupsFileEncryptBtn" type="button" class="btn-main btn-encrypt"><span data-icon="lock" class="icon-anim"></span><span data-i18n="groups.file.enc.submit">Encrypt file</span></button></div>
+      <div class="progress-wrap" id="groupsFileProgressWrap" style="display:none; margin-top:10px;">
+        <div class="progress-track"><div class="progress-fill" id="groupsFileProgressFill"></div></div>
+        <div class="progress-meta" id="groupsFileProgressMeta"></div>
+        <div class="btn-group">
+          <button id="groupsFileCancelBtn" type="button" class="btn-main btn-decrypt" style="color:var(--danger); border-color:var(--danger);"><span data-icon="cancel" class="icon-anim"></span><span data-i18n="files.cancel">Cancel</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title"><span class="icon" data-icon="unlock"></span><span data-i18n="groups.file.dec.title">Open a file</span></div>
+      <input type="file" id="groupsFileDecInput" accept=".anigma" style="width:100%;">
+      <p class="field-hint" style="margin-top:6px;" data-i18n="groups.file.dec.hint">…</p>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title"><span class="icon" data-icon="message"></span><span data-i18n="groups.msg.title">Send a message</span></div>
+      <textarea id="groupsMsgInput" data-i18n-placeholder="groups.msg.placeholder" style="height:90px;"></textarea>
+      <div class="btn-group" style="margin-top:8px;"><button id="groupsEncryptBtn" type="button" class="btn-main btn-encrypt"><span data-icon="lock" class="icon-anim"></span><span data-i18n="groups.msg.encrypt">Encrypt</span></button></div>
+      <div id="groupsEncOutputWrap" style="display:none; margin-top:10px;">
+        <label data-i18n="groups.msg.output.label">Send this in the group</label>
+        <textarea id="groupsEncOutput" readonly style="height:90px;"></textarea>
+        <div class="key-row" style="margin-top:6px;">
+          <button id="groupsEncCopyBtn" type="button" class="btn-sm"><span data-icon="copy" class="icon-anim"></span><span data-i18n="groups.copy">Copy</span></button>
+          <button id="groupsEncQrBtn" type="button" class="btn-sm"><span data-icon="qr" class="icon-anim"></span><span data-i18n="qr.title.text">QR</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title"><span class="icon" data-icon="unlock"></span><span data-i18n="groups.msg.decrypt.title">Read a message</span></div>
+      <textarea id="groupsDecInput" data-i18n-placeholder="groups.msg.decrypt.placeholder" style="height:90px;"></textarea>
+      <div class="btn-group" style="margin-top:8px;"><button id="groupsDecryptBtn" type="button" class="btn-main btn-decrypt"><span data-icon="unlock" class="icon-anim"></span><span data-i18n="groups.msg.decrypt.submit">Decrypt</span></button></div>
+      <div id="groupsDecOutputWrap" style="display:none; margin-top:10px;">
+        <label data-i18n="groups.msg.decrypt.output.label">Message</label>
+        <textarea id="groupsDecOutput" readonly style="height:90px;"></textarea>
+      </div>
+    </div>
+
+    <div class="section-card danger-zone">
+      <div class="danger-row">
+        <div class="danger-row-text">
+          <div class="danger-row-title" id="groupsLeaveTitle"></div>
+          <p class="field-hint" id="groupsLeaveHint"></p>
+        </div>
+        <button id="groupsLeaveBtn" type="button" class="btn-sm btn-danger"><span data-icon="trash" class="icon-anim"></span><span data-i18n="groups.leave.btn">Remove</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div class="log-box adv-only">
+    <div class="log-title">
+      <span data-i18n="log.title">Activity log</span>
+      <span style="display:flex; gap:6px;">
+        <button id="jsb29" type="button" class="btn-sm"><span id="toggleLogIcon" data-icon="pause" class="icon-anim"></span><span id="toggleLogBtnText" data-i18n="log.stop">Pause</span></button>
+        <button id="jsb30" type="button" class="btn-sm"><span data-icon="eraser" class="icon-anim"></span><span data-i18n="log.clear">Clear</span></button>
+      </span>
+    </div>
+    <div class="log-content" id="logContent"></div>
+  </div>
+
+  <div class="status-bar" id="statusBar"></div>
+  <div class="mode-switch-row"><button id="modeFooterBtn" type="button" class="btn-link"></button></div>
+  <div class="app-footer" id="appFooter"></div>
+</div>
+
+<!-- ============================== HELP MODAL ==============================
+     A task-by-task guide: every topic is a short list of numbered steps that use the same words as the screens. -->
+<div class="modal" id="helpModal">
+  <div class="modal-content wide">
+    <div class="modal-title" data-i18n="help.title">Help</div>
+    <p class="help-subtitle" data-i18n="help.subtitle">…</p>
+    <p class="field-hint" data-i18n="help.quick" style="margin:0 0 14px;">…</p>
+    <div id="helpAccordion"></div>
+    <div class="help-about">
+      <div id="helpVersion"></div>
+    </div>
+    <button id="jsb31" type="button" class="modal-btn" style="width:100%;"><span data-icon="check" class="icon-anim"></span><span data-i18n="help.gotIt">Got it</span></button>
+  </div>
+</div>
+
+<!-- ============================== QR MODAL ============================== -->
+<div class="modal" id="qrModal">
+  <div class="modal-content">
+    <div class="modal-title" id="qrModalTitle"></div>
+    <p class="field-hint" id="qrModalDesc"></p>
+    <div id="qrcodeBox"></div>
+    <p id="qrError" style="display:none;"></p>
+    <button id="jsb32" type="button" class="modal-btn"><span data-icon="check" class="icon-anim"></span><span data-i18n="modal.close">Close</span></button>
+  </div>
+</div>
+
+<!-- ============================== FIRST-RUN WELCOME (3 short steps) ==============================
+     1) choose a password  2) here's your ID (optional)  3) start. Never blocks the app: it can be
+     closed at any point, and the same things are all reachable from the normal tabs later. -->
+<div class="modal" id="onboardModal" role="dialog" aria-modal="true" aria-labelledby="onboardTitle">
+  <div class="modal-content">
+    <div class="onboard-dots" id="onboardDots" aria-hidden="true"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+    <div class="field-hint" id="onboardStepLabel" style="margin:0 0 10px;"></div>
+
+    <div class="onboard-step" id="onboardStep1">
+      <div class="modal-title" id="onboardTitle" data-i18n="onboard.1.title">Choose a password</div>
+      <p data-i18n="onboard.1.text">…</p>
+      <input type="password" id="onboardPw" data-i18n-placeholder="identity.pin.placeholder" autocomplete="new-password" style="margin-top:12px;">
+      <div class="strength-meter"><div class="strength-meter-fill" id="onboardPwStrengthFill"></div></div>
+      <div class="key-strength" id="onboardPwStrengthText" style="text-align:start;"></div>
+      <input type="password" id="onboardPw2" data-i18n-placeholder="onboard.1.repeat" autocomplete="new-password" style="margin-top:10px;">
+      <p class="onboard-error" id="onboardError" role="alert" style="display:none;"></p>
+      <button id="onboardNext1" type="button" class="modal-btn" style="width:100%;"><span data-icon="check" class="icon-anim"></span><span data-i18n="onboard.1.next">Continue</span></button>
+      <button id="onboardSkip1" type="button" class="modal-btn ghost" style="width:100%;"><span data-i18n="onboard.1.skip">Not now</span></button>
+    </div>
+
+    <div class="onboard-step" id="onboardStep2" style="display:none;">
+      <div class="modal-title" data-i18n="onboard.2.title">Here's your ID</div>
+      <p data-i18n="onboard.2.text">…</p>
+      <div id="onboardQr" class="qr-box"></div>
+      <div class="key-row" style="justify-content:center;">
+        <button id="onboardShareBtn" type="button" class="btn-sm" style="display:none;"><span data-icon="share" class="icon-anim"></span><span data-i18n="identity.share">Share</span></button>
+        <button id="onboardCopyBtn" type="button" class="btn-sm"><span data-icon="copy" class="icon-anim"></span><span data-i18n="identity.copyPub">Copy</span></button>
+      </div>
+      <button id="onboardNext2" type="button" class="modal-btn" style="width:100%;"><span data-i18n="onboard.2.next">Next</span></button>
+      <button id="onboardSkip2" type="button" class="modal-btn ghost" style="width:100%;"><span data-i18n="onboard.2.skip">Skip</span></button>
+    </div>
+
+    <div class="onboard-step" id="onboardStep3" style="display:none;">
+      <div class="modal-title" data-i18n="onboard.3.title">You're all set</div>
+      <p data-i18n="onboard.3.text">…</p>
+      <button id="onboardDone" type="button" class="modal-btn" style="width:100%;"><span data-icon="rocket" class="icon-anim"></span><span data-i18n="onboard.3.done">Start using Anigma</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== VERIFY A CONTACT ("How do I make sure this is really them?") ============================== -->
+<div class="modal" id="verifyModal">
+  <div class="modal-content wide">
+    <div class="modal-title" data-i18n="verify.title">Make sure it's really them</div>
+    <p class="help-subtitle" data-i18n="verify.intro">…</p>
+    <label data-i18n="verify.yourCode" style="margin-top:0;">Your verification code</label>
+    <p class="code-display" id="verifyMyCode"></p>
+
+    <div class="verify-divider"></div>
+    <label data-i18n="verify.theirCode">Check a contact's code</label>
+    <p class="field-hint" id="verifyNoContacts" style="display:none;" data-i18n="verify.noContacts">…</p>
+    <div id="verifyForm">
+      <select id="verifyContactSelect" style="width:100%;" data-i18n-aria="verify.contact"></select>
+      <input type="text" id="verifyInput" data-i18n-placeholder="verify.placeholder" autocomplete="off" autocapitalize="characters" spellcheck="false" style="margin-top:8px;">
+      <div class="key-row">
+        <button id="verifyCompareBtn" type="button" class="btn-sm"><span data-icon="shield" class="icon-anim"></span><span data-i18n="fp.compare.action">Compare</span></button>
+      </div>
+      <div class="verify-result" id="verifyResult" role="status" style="display:none;"></div>
+      <button id="verifyMarkBtn" type="button" class="btn-sm" style="display:none; margin-top:8px;"></button>
+    </div>
+    <button id="verifyCloseBtn" type="button" class="modal-btn" style="width:100%;"><span data-icon="check" class="icon-anim"></span><span data-i18n="modal.close">Close</span></button>
+  </div>
+</div>
+
+<!-- ============================== QR SCANNER (camera) ============================== -->
+<div class="modal" id="scanModal" role="dialog" aria-modal="true" aria-labelledby="scanModalTitle">
+  <div class="modal-content">
+    <div class="modal-title" id="scanModalTitle" data-i18n="scan.title">Scan a QR code</div>
+    <p class="field-hint" data-i18n="scan.hint">…</p>
+    <div class="scan-frame"><video id="scanVideo" playsinline muted></video></div>
+    <p class="field-hint" id="scanMsg" role="status" style="min-height:1.6em;"></p>
+    <button id="scanCancelBtn" type="button" class="modal-btn ghost" style="width:100%;"><span data-i18n="files.cancel">Cancel</span></button>
+  </div>
+</div>
+
+
+<!-- One shared popover for every "?" tooltip (see initTips() in js/ui.js). -->
+<div class="tip-pop" id="tipPop" role="tooltip" hidden></div>
+
+<!-- ============================== FILES MANIFEST PREVIEW MODAL ============================== -->
+<div class="modal" id="filesManifestModal">
+  <div class="modal-content wide">
+    <div class="modal-title" data-i18n="files.manifestPreviewTitle">This package contains:</div>
+    <p class="field-hint" id="filesManifestFrom" style="display:none; margin:-4px 0 10px;"></p>
+    <div class="file-manifest" id="filesManifestPreviewList" style="max-height:280px;"></div>
+    <button id="jsb33" type="button" class="modal-btn" style="width:100%;"><span data-icon="folder" class="icon-anim"></span><span data-i18n="files.manifestPreviewConfirm">Decrypt and write these files</span></button>
+    <button id="jsb34" type="button" class="modal-btn ghost" style="width:100%;"><span data-i18n="modal.close">Close</span></button>
+  </div>
+</div>
+
+<!-- ============================== FORCED UPDATE GATE (js/update.js) ============================== -->
+<div class="fu-overlay" id="fuOverlay" role="alertdialog" aria-modal="true" aria-labelledby="fuTitle" aria-describedby="fuBody">
+  <div class="fu-card">
+    <div class="fu-icon" data-icon="rocket"></div>
+    <div class="modal-title" id="fuTitle" data-i18n="update.title">Update required</div>
+    <p id="fuBody" data-i18n="update.body">…</p>
+    <div class="fu-versions"><span><span data-i18n="update.current">Installed</span>: <b id="fuCur" dir="ltr"></b></span><span><span data-i18n="update.latest">New</span>: <b id="fuNew" dir="ltr"></b></span></div>
+    <div id="fuNotesWrap" class="fu-notes"><b data-i18n="update.notes">What’s new</b><div id="fuNotes"></div></div>
+    <button type="button" class="modal-btn" id="fuBtn" style="width:100%;"><span data-icon="download"></span><span data-i18n="update.btn">Update now</span></button>
+    <button type="button" class="modal-btn ghost" id="fuLater" style="width:100%;display:none;"><span data-i18n="update.later">Not now</span></button>
+    <p class="field-hint" id="fuStatus" role="status" aria-live="polite"></p>
+    <p class="field-hint" id="fuSha" style="display:none;"><span data-i18n="update.sha">SHA-256 of the file:</span><br><code id="fuShaVal" dir="ltr" style="word-break:break-all;"></code></p>
+  </div>
+</div>
+
+<!-- ============================== PWA UPDATE BAR ============================== -->
+<div class="update-bar" id="updateBar">
+  <span data-i18n="pwa.updateAvailable">A new version is ready.</span>
+  <button type="button" id="updateReloadBtn" data-i18n="pwa.reload">Reload</button>
+</div>
+
+<script src="js/compat-check.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/container.js"></script>
+<script src="js/groups.js"></script>
+<!-- EMBEDDED-WORKER-BUNDLE:START (generated by tools/embed-worker-bundle.js — do not edit by hand) -->
+<script type="text/plain" id="workerBundleCrypto">// ====================================================================================
+// ANIGMA — crypto.js
+// Identity (ECDH P-256 or X25519), key derivation (HKDF; Argon2id for passphrases, PBKDF2 for older data),
+// and the secure-message engine. Everything here runs through the browser's native Web
+// Crypto API. No cryptographic primitive is implemented by hand; only composition of
+// primitives happens here.
+//
+// Curve support: P-256 remains the default/compatible curve (65-byte raw public key,
+// uncompressed point). X25519 is offered as an opt-in "modern" curve for NEW identities
+// on browsers that support it (32-byte raw public key). Every function below that takes
+// a raw public key detects which curve it is by that length difference, so callers never
+// need to track curve choice themselves, and old P-256 identities/contacts keep working
+// unchanged. See CURVE_X25519 / CURVE_P256 and curveFromRawPubLen().
+// ====================================================================================
+
+const AnigmaCrypto = (function () {
+  'use strict';
+
+  const ID_PASSPHRASE_MIN_LENGTH = 12; // creating/exporting only; unlocking never checks it, so shorter existing passwords still open
+  // OWASP's current guidance for PBKDF2-HMAC-SHA256 is 600,000 iterations (310,000 was the 2021
+  // figure). Every stored identity/backup records its own `iter`, so older blobs still open.
+  const PBKDF2_ITERATIONS = 600000;
+  const PBKDF2_MIN_ITER = 100000;      // accepted range when READING a stored/backup blob:
+  const PBKDF2_MAX_ITER = 5000000;     // a lying/corrupt `iter` must not become a DoS or a downgrade
+  // Argon2id (memory-hard; see js/argon2-client.js + vendor/argon2id.js). Defaults used when CREATING a key:
+  // 128 MiB, 3 passes, 1 lane (RFC 9106 §4 "second recommended option" is 64 MiB; this is deliberately stronger).
+  // If a device cannot allocate that, creation steps down through ARGON2_FALLBACK_M (never below 32 MiB).
+  // READING a stored/backup blob accepts only the range below, so a lying file cannot demand gigabytes of RAM.
+  const ARGON2_DEFAULT = { m: 131072, t: 3, p: 1 };   // m is in KiB
+  const ARGON2_FALLBACK_M = [65536, 32768];
+  const ARGON2_MIN_M = 8192, ARGON2_MAX_M = 262144, ARGON2_MIN_T = 1, ARGON2_MAX_T = 12;
+  function validArgon2Params(kp) {
+    return !!kp && Number.isInteger(kp.m) && Number.isInteger(kp.t) && kp.p === 1 &&
+      kp.m >= ARGON2_MIN_M && kp.m <= ARGON2_MAX_M && kp.t >= ARGON2_MIN_T && kp.t <= ARGON2_MAX_T;
+  }
+  // LEGACY (read-only): messages made before the "no fixed prefix" format began with this text, and
+  // every one of them then continued with the same base64 of `{"v":3` — a constant any filter could
+  // match. New messages are never written with it (see encryptMessage); it is only recognised on input
+  // so old messages still open.
+  const MSG_MAGIC = 'ANGM3:';
+  const MSG_INFO_LEGACY = 'anigma-message-v3';
+  const MSG_INFO = 'anigma-message-v4';     // HKDF domain separation for the prefix-less binary format
+  // Version of the passphrase normalisation (see normalizePassphrase). Stored next to every identity /
+  // backup as `pn`; a blob without it was made before normalisation existed and is read as raw text.
+  const PASSPHRASE_NORM_VERSION = 1;
+
+  const CURVE_P256 = 'P-256';
+  const CURVE_X25519 = 'X25519';
+  const RAW_PUB_LEN = { 'P-256': 65, 'X25519': 32 };
+
+  // ------------------------------------------------------------------ base64 helpers
+  function bufToB64(buf) {
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64ToBuf(str) {
+    const bin = atob(str);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  // ------------------------------------------------------------------ curve helpers
+  // Identifies the curve of a raw public key purely from its byte length. This is safe
+  // because the two supported curves have non-overlapping raw-export lengths (65 vs 32).
+  function curveFromRawPubLen(rawBuffer) {
+    const len = (rawBuffer && rawBuffer.byteLength !== undefined) ? rawBuffer.byteLength : rawBuffer.length;
+    if (len === RAW_PUB_LEN[CURVE_X25519]) return CURVE_X25519;
+    if (len === RAW_PUB_LEN[CURVE_P256]) return CURVE_P256;
+    throw new Error('unknown-curve-length');
+  }
+
+  function keyAlgoFor(curve) {
+    return curve === CURVE_X25519 ? { name: 'X25519' } : { name: 'ECDH', namedCurve: 'P-256' };
+  }
+
+  // Feature-detects X25519 support once per session (some browsers as of 2026 still lack
+  // it in Web Crypto). Callers should use this to decide whether to offer the "modern
+  // curve" choice at identity-creation time, rather than letting generateKey fail later.
+  let _x25519Support = null;
+  async function supportsX25519() {
+    if (_x25519Support !== null) return _x25519Support;
+    try {
+      await crypto.subtle.generateKey({ name: 'X25519' }, true, ['deriveBits']);
+      _x25519Support = true;
+    } catch (e) {
+      _x25519Support = false;
+    }
+    return _x25519Support;
+  }
+
+  // ------------------------------------------------------------------ fingerprint
+  // SHA-256 over the raw public key, first 16 bytes, shown as hex groups. Curve-agnostic:
+  // a P-256 key and an X25519 key never collide because their raw encodings differ in
+  // length (and thus hash differently) well before this truncation.
+  async function computeFingerprint(pubKeyRawBuffer) {
+    const hash = await crypto.subtle.digest('SHA-256', pubKeyRawBuffer);
+    const bytes = new Uint8Array(hash).slice(0, 16);
+    const hex = Array.from(bytes).map(function (b) { return b.toString(16).padStart(2, '0').toUpperCase(); }).join('');
+    return hex.match(/.{1,4}/g).join(' ');
+  }
+
+  async function importPublicKeyRaw(rawBuffer) {
+    const curve = curveFromRawPubLen(rawBuffer);
+    return crypto.subtle.importKey('raw', rawBuffer, keyAlgoFor(curve), true, []);
+  }
+
+  function generateIdentityKeyPair(curve) {
+    return crypto.subtle.generateKey(keyAlgoFor(curve || CURVE_P256), true, ['deriveBits']);
+  }
+
+  function generateEphemeralKeyPair(curve) {
+    return crypto.subtle.generateKey(keyAlgoFor(curve || CURVE_P256), true, ['deriveBits']);
+  }
+
+  // ------------------------------------------------------------------ public-key derivation from a private key
+  // Security review #6: an identity blob's `pub` field was stored as plaintext, outside the
+  // AES-GCM envelope that protects the private key, and trusted as-is on unlock. Anything
+  // able to write to localStorage (XSS, a rogue browser extension, a shared/compromised
+  // device) could swap that one field and get the victim's own app to display an
+  // attacker-chosen fingerprint/public key as "my identity" — QR code, "My ID" panel, and
+  // "message to myself" would all then use the attacker's key while the PIN still unlocks
+  // the victim's real private key.
+  //
+  // The fix is to never trust a stored public key: always re-derive it from the private
+  // key that was just decrypted, and use that as the identity's public key everywhere. An
+  // EC (P-256) or OKP (X25519) private key's JWK export always includes its public
+  // coordinates alongside 'd', so this needs no extra ECDH operation — it's a pure format
+  // conversion, not a new cryptographic step.
+  function b64urlToBuf(b64url) {
+    let s = b64url.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return new Uint8Array(b64ToBuf(s));
+  }
+  async function derivePublicRawFromPrivateKey(privateKey, curve) {
+    const jwk = await crypto.subtle.exportKey('jwk', privateKey);
+    if (curve === CURVE_X25519) {
+      return b64urlToBuf(jwk.x); // OKP: 32-byte public 'x'
+    }
+    // EC P-256: raw uncompressed point = 0x04 || x(32) || y(32)
+    const x = b64urlToBuf(jwk.x), y = b64urlToBuf(jwk.y);
+    const out = new Uint8Array(65);
+    out[0] = 0x04; out.set(x, 1); out.set(y, 33);
+    return out;
+  }
+
+  // ------------------------------------------------------------------ passphrase-derived key (identity at rest)
+  async function keyFromPassphrase(pin, saltBytes, iterations) {
+    const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), { name: 'PBKDF2' }, false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: saltBytes, iterations: iterations || PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  // ------------------------------------------------------------------ pluggable KDF dispatch
+  // deriveMasterKey() is the one entry point ui.js should call for turning a passphrase
+  // into the AES-GCM key that wraps an identity (device unlock or backup export/import).
+  // 'kdfName' and 'iterations' are read back from the stored blob, never assumed, so a
+  // change in defaults here never breaks unlocking something encrypted under the old
+  // defaults — see idKdfParamsFor() usage in ui.js.
+  //
+  // Argon2id: new identities and backups use it (js/argon2-client.js runs the vendored, RFC-9106-compatible
+  // implementation from vendor/argon2id.js in a worker and hands back a non-extractable AES-GCM key through
+  // self.AnigmaArgon2idKDF(pass, salt, {m,t,p})). Identities made by earlier releases are stored with
+  // kdf:'pbkdf2' and keep opening exactly as before — nothing is migrated or re-written behind the user's back.
+  // Reading a blob that says argon2id when the module is absent throws 'argon2id-unavailable' (never a silent
+  // PBKDF2 fallback under a misleading label). Creation goes through deriveNewKey(), which only steps the
+  // memory down on a genuine out-of-memory, refuses to go below 32 MiB, and refuses to fall back to PBKDF2 at all
+  // (it throws 'argon2id-unavailable' instead) unless a test explicitly passes { allowPbkdf2: true }.
+  // Persian/Arabic keyboards type the SAME visible letters as different code points: Arabic yeh/kaf
+  // (U+064A, U+0643), alef maksura (U+0649), and three different digit sets (ASCII, Arabic-Indic
+  // U+0660.., Persian U+06F0..). Hashed as raw bytes those are different passwords, so switching
+  // keyboard or device could lock someone out of their own identity. This maps every variant to one
+  // canonical form (Persian yeh/kaf, ASCII digits) after Unicode NFKC. Versioned via `pn` so blobs
+  // made before it existed (raw bytes) keep opening — see openWithPassphrase.
+  function normalizePassphrase(pw) {
+    let out = String(pw === undefined || pw === null ? '' : pw);
+    if (typeof out.normalize === 'function') out = out.normalize('NFKC');
+    out = out.replace(/[\u064A\u0649]/g, '\u06CC').replace(/\u0643/g, '\u06A9');
+    out = out.replace(/[\u0660-\u0669]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x0660 + 48); });
+    out = out.replace(/[\u06F0-\u06F9]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x06F0 + 48); });
+    return out;
+  }
+
+  // `pn` (optional): PASSPHRASE_NORM_VERSION to normalise the passphrase first; anything else = raw
+  // (the legacy behaviour, which is why omitting it is still valid for old stored blobs and tests).
+  async function deriveMasterKey(pin, saltBytes, iterations, kdfName, pn, kdfParams) {
+    const kdf = kdfName || 'pbkdf2';
+    const pass = pn === PASSPHRASE_NORM_VERSION ? normalizePassphrase(pin) : pin;
+    if (kdf === 'pbkdf2') {
+      const it = iterations || PBKDF2_ITERATIONS;
+      if (!Number.isInteger(it) || it < PBKDF2_MIN_ITER || it > PBKDF2_MAX_ITER) throw new Error('bad-format');
+      return keyFromPassphrase(pass, saltBytes, it);
+    }
+    if (kdf === 'argon2id') {
+      if (!validArgon2Params(kdfParams)) throw new Error('bad-format');
+      if (typeof self !== 'undefined' && typeof self.AnigmaArgon2idKDF === 'function') {
+        return self.AnigmaArgon2idKDF(pass, saltBytes, { m: kdfParams.m, t: kdfParams.t, p: kdfParams.p });
+      }
+      throw new Error('argon2id-unavailable');
+    }
+    throw new Error('unknown-kdf');
+  }
+
+  // Creates a brand-new passphrase-derived key with Argon2id (stepping the memory down only when the device cannot
+  // allocate it, never below ARGON2_FALLBACK_M's floor). Returns { key, kdfFields } where kdfFields is what the
+  // caller stores next to the salt: { kdf:'argon2id', kp:{m,t,p} }.
+  //
+  // There is NO silent downgrade: if Argon2id is not loaded (script blocked, failed integrity check, very old
+  // engine…) this throws Error('argon2id-unavailable') and the UI tells the user plainly that nothing was created.
+  // PBKDF2 is used for NEW data only when the caller explicitly passes { allowPbkdf2: true } — that switch exists
+  // for the Node unit tests and is never set by the app. PBKDF2 stays fully supported for READING old data.
+  async function deriveNewKey(pin, saltBytes, opts) {
+    if (typeof self !== 'undefined' && typeof self.AnigmaArgon2idKDF === 'function') {
+      const tries = [ARGON2_DEFAULT.m].concat(ARGON2_FALLBACK_M);
+      for (let i = 0; i < tries.length; i++) {
+        const kp = { m: tries[i], t: ARGON2_DEFAULT.t, p: ARGON2_DEFAULT.p };
+        try {
+          const key = await deriveMasterKey(pin, saltBytes, 0, 'argon2id', PASSPHRASE_NORM_VERSION, kp);
+          return { key: key, kdfFields: { kdf: 'argon2id', kp: kp } };
+        } catch (e) { if (!e || e.message !== 'argon2id-memory' || i === tries.length - 1) throw e; }
+      }
+    }
+    if (!(opts && opts.allowPbkdf2 === true)) throw new Error('argon2id-unavailable');
+    const key = await deriveMasterKey(pin, saltBytes, PBKDF2_ITERATIONS, 'pbkdf2', PASSPHRASE_NORM_VERSION);
+    return { key: key, kdfFields: { kdf: 'pbkdf2', iter: PBKDF2_ITERATIONS } };
+  }
+
+  // Everything kept in localStorage (identity key, contacts, groups) is sealed under ONE master key.
+  // Without more, a blob is valid in any slot, so someone who can write to storage could swap the
+  // contacts blob into the groups slot (or the reverse). The slot name is therefore bound into the
+  // AES-GCM tag as additional authenticated data. Blobs written before this carry no `aad: 1` flag
+  // and are still read without it, then rewritten with it. NOT covered: replaying an OLDER copy of the
+  // same slot (rollback) — detecting that needs a counter kept somewhere the attacker can't write.
+  function storageAad(label) { return new TextEncoder().encode('anigma-storage|' + label); }
+  async function sealStored(masterKey, label, plainBytes) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv, additionalData: storageAad(label) }, masterKey, plainBytes);
+    return { iv: iv, ct: ct };
+  }
+  async function openStored(masterKey, label, blob) {
+    const alg = { name: 'AES-GCM', iv: new Uint8Array(b64ToBuf(blob.iv)) };
+    if (blob.aad === 1) alg.additionalData = storageAad(label);
+    return crypto.subtle.decrypt(alg, masterKey, b64ToBuf(blob.ct));
+  }
+
+  // Opens an AES-GCM blob that was sealed under a passphrase-derived key (stored identity, or a
+  // backup's payload). `params`: { salt, iv, ct (Uint8Array/ArrayBuffer), iter, kdf, pn }.
+  // pn === 1: the passphrase is normalised. No pn (legacy blob): the passphrase is tried exactly as
+  // typed first, then — only if that differs — in normalised form, which rescues someone who now
+  // types their (ASCII-equivalent) passphrase on a different keyboard. Returns { masterKey, plain }.
+  // Throws Error('wrong-passphrase') when nothing opens it; KDF problems ('bad-format',
+  // 'argon2id-unavailable', 'unknown-kdf') propagate unchanged so callers can tell them apart.
+  async function openWithPassphrase(pin, params) {
+    const variants = params.pn === PASSPHRASE_NORM_VERSION
+      ? [normalizePassphrase(pin)]
+      : (normalizePassphrase(pin) !== pin ? [pin, normalizePassphrase(pin)] : [pin]);
+    for (let i = 0; i < variants.length; i++) {
+      const masterKey = await deriveMasterKey(variants[i], params.salt, params.iter, params.kdf, 0, params.kp);
+      try {
+        const alg = { name: 'AES-GCM', iv: params.iv };
+        if (params.aad) alg.additionalData = params.aad;
+        const plain = await crypto.subtle.decrypt(alg, masterKey, params.ct);
+        return { masterKey: masterKey, plain: plain };
+      } catch (e) { /* try next variant */ }
+    }
+    throw new Error('wrong-passphrase');
+  }
+
+  // A few of the passwords attackers try first, in English and Persian. Deliberately short: this is a
+  // sanity filter for the meter, not a dictionary attack model (a real one is megabytes). Matching is
+  // done after lower-casing, mapping look-alikes (@->a, 0->o, 1->l, 3->e, $/5->s) and normalising
+  // Persian/Arabic letter and digit variants.
+  const COMMON_PASSWORD_WORDS = [
+    'password', 'passw0rd', 'qwerty', 'qwertyuiop', 'asdfgh', 'zxcvbn', 'letmein', 'welcome', 'admin', 'login',
+    'iloveyou', 'monkey', 'dragon', 'master', 'sunshine', 'princess', 'football', 'baseball', 'secret', 'shadow',
+    'michael', 'superman', 'batman', 'trustno', 'whatever', 'freedom', 'hello', 'anigma', 'changeme', 'google',
+    'summer', 'winter', 'spring', 'autumn', 'love', 'test', 'user', 'abc', '1234', '0000', '1111', '2020', '2021',
+    '2022', '2023', '2024', '2025', '2026',
+    '\u0631\u0645\u0632', '\u067E\u0633\u0648\u0631\u062F', '\u067E\u0627\u0633\u0648\u0631\u062F', '\u0639\u0634\u0642',
+    '\u0633\u0644\u0627\u0645', '\u0627\u06CC\u0631\u0627\u0646', '\u0645\u062D\u0645\u062F', '\u0639\u0644\u06CC'
+  ];
+  function containsCommonWord(pw) {
+    const low = normalizePassphrase(pw).toLowerCase().replace(/[@]/g, 'a').replace(/0/g, 'o').replace(/[1!|]/g, 'l').replace(/3/g, 'e').replace(/[$5]/g, 's');
+    const plain = normalizePassphrase(pw).toLowerCase();
+    return COMMON_PASSWORD_WORDS.some(function (w) { return low.indexOf(w) !== -1 || plain.indexOf(w) !== -1; });
+  }
+
+  // Estimate, in "bits", of how long an attacker who knows typical human habits would need. Not a
+  // guarantee: it only knows the short word list above, so a password that merely LOOKS random but is
+  // built from your own name or birthday will still score too well. Rules: length counts only for
+  // characters that aren't a repetition or an ascending/descending run; the alphabet size is taken from
+  // the character classes used; a recognised common word caps the result very low; and ordinary typed
+  // text is assumed to carry far fewer bits per character than random characters would.
+  //   weak < 36 bits, medium < 56, strong >= 56 (about: 4 unrelated words, or 14 random mixed characters).
+  function estimatePasswordStrength(pw) {
+    if (!pw) return { key: '', className: '', percent: 0 };
+    const norm = normalizePassphrase(pw);
+    const chars = Array.from(norm);
+    let pool = 0, variety = 0;
+    if (/[a-z]/.test(norm)) { pool += 26; variety++; }
+    if (/[A-Z]/.test(norm)) { pool += 26; variety++; }
+    if (/[0-9]/.test(norm)) { pool += 10; variety++; }
+    if (/[^a-zA-Z0-9\u0600-\u06FF]/.test(norm)) { pool += 33; variety++; }
+    if (/[\u0600-\u06FF]/.test(norm)) { pool += 36; variety++; }
+    const distinct = new Set(chars).size;
+    let seq = 0; // characters that merely continue a run or an ascending/descending sequence
+    for (let i = 2; i < chars.length; i++) {
+      const a = chars[i - 2].codePointAt(0), b = chars[i - 1].codePointAt(0), c = chars[i].codePointAt(0);
+      if ((b - a === c - b) && Math.abs(c - b) <= 1) seq++;
+    }
+    const effLen = Math.max(0, Math.min(distinct * 2, chars.length - seq)); // few distinct chars = repetition
+    let bits = effLen * Math.log2(Math.max(pool, 2));
+    if (containsCommonWord(pw)) bits = Math.min(bits, 14 + Math.max(0, effLen - 8) * 1.5);
+    else if (variety < 3) bits = Math.min(bits, effLen * 3.2);
+    else bits = Math.min(bits, effLen * 4);
+    const percent = Math.max(5, Math.min(100, (bits / 70) * 100));
+    if (pw.length < ID_PASSPHRASE_MIN_LENGTH) return { key: 'key.strength.weak', className: 'weak', percent: Math.min(percent, 30) };
+    if (bits < 36) return { key: 'key.strength.weak', className: 'weak', percent: Math.min(percent, 35) };
+    if (bits < 56) return { key: 'key.strength.medium', className: 'medium', percent: percent };
+    return { key: 'key.strength.strong', className: 'strong', percent: percent };
+  }
+
+  // ------------------------------------------------------------------ ECDH/X25519 + HKDF (shared by messages and file wraps)
+  // The deriveBits algorithm name must match the key's own curve (ECDH for P-256, X25519
+  // for X25519); read it off the private key rather than assuming, so a DH between two
+  // same-curve keys always works regardless of which curve the identity picked.
+  async function ecdhBits(privateKey, publicKey) {
+    const algoName = privateKey.algorithm && privateKey.algorithm.name === 'X25519' ? 'X25519' : 'ECDH';
+    const bits = algoName === 'X25519' ? 256 : 256; // both curves used here yield a 256-bit shared secret
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: algoName, public: publicKey }, privateKey, bits));
+  }
+
+  // Static-static DH -> HKDF -> a non-extractable HMAC-SHA-256 key. Used for the file package's
+  // sender-authentication tags: only the two holders of the (sender, recipient) long-term key pair can
+  // compute it, which is what a key shared by ALL recipients (the content key) can never prove.
+  async function deriveStaticHmacKey(myPrivateKey, theirPublicKey, saltBytes, infoStr) {
+    const bits = await ecdhBits(myPrivateKey, theirPublicKey);
+    const hkdfKey = await crypto.subtle.importKey('raw', bits, { name: 'HKDF' }, false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'HKDF', hash: 'SHA-256', salt: saltBytes, info: new TextEncoder().encode(infoStr) },
+      hkdfKey, { name: 'HMAC', hash: 'SHA-256', length: 256 }, false, ['sign', 'verify']
+    );
+  }
+
+  // X3DH-style shared key: DH1 (an ephemeral private key against a static/ephemeral public
+  // key, for forward secrecy) and DH2 (a second ECDH pair whose meaning depends on the
+  // caller — the long-term keys for sender authentication, or a second ephemeral for
+  // anonymity) are concatenated and run through HKDF-SHA-256. If either party used the
+  // wrong key, the derived AES-GCM key is wrong and decryption fails on the tag check —
+  // that failure IS the authentication.
+  async function deriveSharedAesKey(dh1PrivateKey, dh1PublicKey, dh2PrivateKey, dh2PublicKey, saltBytes, infoStr) {
+    const bits1 = await ecdhBits(dh1PrivateKey, dh1PublicKey);
+    const bits2 = await ecdhBits(dh2PrivateKey, dh2PublicKey);
+    const combined = new Uint8Array(bits1.length + bits2.length);
+    combined.set(bits1, 0);
+    combined.set(bits2, bits1.length);
+    const hkdfKey = await crypto.subtle.importKey('raw', combined, { name: 'HKDF' }, false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'HKDF', hash: 'SHA-256', salt: saltBytes, info: new TextEncoder().encode(infoStr) },
+      hkdfKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  // ------------------------------------------------------------------ padding (section 5)
+  // Pads the JSON envelope's UTF-8 byte length up to the next power of two (min 256,
+  // capped at 16 MiB — beyond that, padding overhead stops being worth it). Padding lives
+  // inside the encrypted, authenticated plaintext, and its content is never zero bytes.
+  const PAD_MIN = 256;
+  const PAD_MAX = 16 * 1024 * 1024;
+  const PAD_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  function nextPow2(n) {
+    let p = PAD_MIN;
+    while (p < n) p *= 2;
+    return p;
+  }
+
+  function randomPadString(len) {
+    if (len <= 0) return '';
+    const bytes = new Uint8Array(len);
+    crypto.getRandomValues(bytes);
+    let out = '';
+    for (let i = 0; i < len; i++) out += PAD_ALPHABET[bytes[i] % PAD_ALPHABET.length]; // never zero-valued
+    return out;
+  }
+
+  // Builds the final JSON string for an envelope object, adding a `pad` field sized so
+  // the total UTF-8 byte length lands exactly on a power-of-two bucket.
+  function buildPaddedJson(envelopeWithoutPad) {
+    const base = Object.assign({}, envelopeWithoutPad, { pad: '' });
+    const baseLen = new TextEncoder().encode(JSON.stringify(base)).length;
+    if (baseLen >= PAD_MAX) {
+      return JSON.stringify(envelopeWithoutPad); // too large to pad meaningfully
+    }
+    // Bucket (power of two) plus a random 0-25% extra, so message lengths are not all of the form
+    // 2^k + constant — that regularity alone would mark a stream of messages as Anigma's. The bucket
+    // still hides the true length to within a factor of two; the jitter only blurs the bucket edges.
+    const bucket = nextPow2(baseLen);
+    const jr = crypto.getRandomValues(new Uint32Array(1))[0];
+    const target = bucket + (jr % (Math.floor(bucket / 4) + 1));
+    let needed = target - baseLen;
+    // Adding characters to `pad` grows the JSON by 1 byte per ASCII character, but if the
+    // count itself changes digit-width in some pathological edge case we re-check once.
+    base.pad = randomPadString(needed);
+    let real = new TextEncoder().encode(JSON.stringify(base)).length;
+    while (real > target && needed > 0) { needed--; base.pad = randomPadString(needed); real = new TextEncoder().encode(JSON.stringify(base)).length; }
+    while (real < target) { base.pad += randomPadString(target - real); real = new TextEncoder().encode(JSON.stringify(base)).length; }
+    return JSON.stringify(base);
+  }
+
+  // HKDF "info" for the prefix-less format. In authenticated mode both long-term public keys are bound
+  // into the key (not just implied by the two DH results), so a ciphertext can only ever be opened as
+  // "from THIS sender to THIS recipient" — it cannot be re-attributed to a different identity pair.
+  function messageInfo(mode, senderPubRaw, recipientPubRaw) {
+    if (mode !== 'auth') return MSG_INFO + '|anon';
+    return MSG_INFO + '|auth|' + bufToB64(senderPubRaw) + '|' + bufToB64(recipientPubRaw);
+  }
+  // Public key to bind: the caller passes it explicitly (a non-extractable key cannot reveal it);
+  // otherwise it is read off an extractable key (tests, group node keys). null = not available.
+  async function resolvePublicRaw(explicitRaw, privateKey) {
+    if (explicitRaw) return new Uint8Array(explicitRaw);
+    try {
+      const curve = (privateKey.algorithm && privateKey.algorithm.name === 'X25519') ? CURVE_X25519 : CURVE_P256;
+      return new Uint8Array(await derivePublicRawFromPrivateKey(privateKey, curve));
+    } catch (e) { return null; }
+  }
+
+  // ------------------------------------------------------------------ wire helpers (prefix-less message format)
+  function concatBytes(parts) {
+    let n = 0;
+    for (let i = 0; i < parts.length; i++) n += parts[i].length;
+    const out = new Uint8Array(n);
+    let o = 0;
+    for (let i = 0; i < parts.length; i++) { out.set(parts[i], o); o += parts[i].length; }
+    return out;
+  }
+  // P-256 raw points start with the constant 0x04 — drop it on the wire (it would be a fixed byte at
+  // the very front of every message) and restore it on read. X25519 keys are already bare 32 bytes.
+  function rawToWire(rawBytes) {
+    const b = new Uint8Array(rawBytes);
+    return b.length === 65 ? b.slice(1) : b;
+  }
+  function wireToRaw(wireBytes, curve) {
+    if (curve !== CURVE_P256) return wireBytes.slice();
+    const out = new Uint8Array(65);
+    out[0] = 0x04; out.set(wireBytes, 1);
+    return out;
+  }
+
+  // ------------------------------------------------------------------ secure message engine (section 2, 4, 5, 6)
+  // Recipient/sender selection:
+  //   recipientPubRaw   - ArrayBuffer, the recipient's raw ECDH public key (from a saved
+  //                       contact, a pasted key, or the user's own key for self-encryption)
+  //   opts.senderPrivateKey / opts.senderPublicKeyRaw - the user's own unlocked identity
+  //   opts.anonymous    - if true, DH2 uses a fresh second ephemeral instead of the
+  //                       long-term identity, so the recipient cannot authenticate the sender
+  async function encryptMessage(plainText, recipientPubRaw, opts) {
+    opts = opts || {};
+    const recipientCurve = curveFromRawPubLen(recipientPubRaw);
+    const recipientPubKey = await importPublicKeyRaw(recipientPubRaw);
+    const eph = await generateEphemeralKeyPair(recipientCurve);
+    const ephPubRaw = new Uint8Array(await crypto.subtle.exportKey('raw', eph.publicKey));
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+
+    let dh2PrivateKey, dh2PublicKey, eph2PubRaw = null, info;
+    const mode = opts.anonymous ? 'anon' : 'auth';
+    if (mode === 'anon') {
+      const eph2 = await generateEphemeralKeyPair(recipientCurve);
+      eph2PubRaw = new Uint8Array(await crypto.subtle.exportKey('raw', eph2.publicKey));
+      dh2PrivateKey = eph2.privateKey;
+      dh2PublicKey = recipientPubKey;
+      info = messageInfo('anon');
+    } else {
+      // Authenticated mode does a real ECDH/X25519 between the sender's own identity key
+      // and the recipient's identity key, so both must be on the same curve — there is no
+      // cross-curve DH. Anonymous mode never touches the sender's identity key, so it has
+      // no such restriction (see above).
+      const senderCurve = (opts.senderPrivateKey && opts.senderPrivateKey.algorithm && opts.senderPrivateKey.algorithm.name === 'X25519') ? CURVE_X25519 : CURVE_P256;
+      if (senderCurve !== recipientCurve) throw new Error('curve-mismatch');
+      dh2PrivateKey = opts.senderPrivateKey;
+      dh2PublicKey = recipientPubKey;
+      const senderPubRaw = await resolvePublicRaw(opts.senderPublicKeyRaw, opts.senderPrivateKey);
+      if (!senderPubRaw) throw new Error('sender-pub-required');
+      info = messageInfo('auth', senderPubRaw, new Uint8Array(recipientPubRaw));
+    }
+
+    const aesKey = await deriveSharedAesKey(eph.privateKey, recipientPubKey, dh2PrivateKey, dh2PublicKey, salt, info);
+
+    // `id` + `ts` sit inside the authenticated plaintext: the receiving device remembers ids it has
+    // opened and flags a second appearance of the same one (a recorded message being re-sent).
+    const innerPlain = {
+      mode: mode,
+      text: plainText,
+      id: bufToB64(crypto.getRandomValues(new Uint8Array(12))),
+      ts: Date.now()
+    };
+    const paddedJson = buildPaddedJson(innerPlain);
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, new TextEncoder().encode(paddedJson)));
+
+    // Wire format (no magic, no version byte, no JSON keys — every byte is a public key, a random
+    // salt/IV, or ciphertext, so nothing in it is constant across messages):
+    //   eph (L) | [eph2 (L), anonymous mode only] | salt (16) | iv (12) | ciphertext+tag
+    // where L = 32 (X25519) or 64 (P-256 as x||y; the constant 0x04 point-format byte is dropped
+    // and put back on read). The reader knows L from its own key's curve and finds out whether eph2
+    // is present by trial decryption — "this is an Anigma message" is therefore proved only by the
+    // AES-GCM tag verifying, never by a recognisable header.
+    const parts = [rawToWire(ephPubRaw)];
+    if (eph2PubRaw) parts.push(rawToWire(eph2PubRaw));
+    parts.push(salt, iv, ct);
+    return bufToB64(concatBytes(parts));
+  }
+
+  // opts.myPrivateKey - unlocked identity of the person decrypting.
+  // opts.claimedSenderPubRaw - optional; the public key of whoever is claimed/selected as
+  //   the sender, used to attempt the authenticated branch. May be omitted if only an
+  //   anonymous decryption is expected.
+  // Returns { text, mode } — mode is read from the AUTHENTICATED plaintext, not from any
+  // outer flag, so it cannot be forged in transit.
+  async function decryptMessage(packedText, opts) {
+    opts = opts || {};
+    const text = String(packedText === undefined || packedText === null ? '' : packedText).trim();
+    if (text.startsWith(MSG_MAGIC)) return decryptLegacyV3(text, opts);
+
+    let bytes;
+    try { bytes = new Uint8Array(b64ToBuf(text)); } catch (e) { throw new Error('not-anigma'); }
+    if (!opts.myPrivateKey) throw new Error('no-candidate');
+    const L = (opts.myPrivateKey.algorithm && opts.myPrivateKey.algorithm.name === 'X25519') ? 32 : 64;
+    const MIN_CT = 16; // GCM tag alone
+    if (bytes.length < L + 28 + MIN_CT) throw new Error('not-anigma');
+
+    const layouts = []; // candidate parsings of the same bytes; only the one that authenticates wins
+    if (bytes.length >= 2 * L + 28 + MIN_CT) layouts.push({ branch: 'anon', ephLen: 2 * L, info: messageInfo('anon') });
+    if (opts.claimedSenderPubRaw) {
+      const myPub = await resolvePublicRaw(opts.myPublicKeyRaw, opts.myPrivateKey);
+      if (myPub) layouts.push({ branch: 'auth', ephLen: L, info: messageInfo('auth', new Uint8Array(opts.claimedSenderPubRaw), myPub) });
+    }
+    if (!layouts.length) throw new Error('no-candidate');
+
+    const curve = L === 32 ? CURVE_X25519 : CURVE_P256;
+    let plainObj = null, matchedBranch = null;
+    for (const lay of layouts) {
+      try {
+        const ephPubKey = await importPublicKeyRaw(wireToRaw(bytes.subarray(0, L), curve));
+        const dh2Pub = lay.branch === 'anon'
+          ? await importPublicKeyRaw(wireToRaw(bytes.subarray(L, 2 * L), curve))
+          : await importPublicKeyRaw(opts.claimedSenderPubRaw);
+        const salt = bytes.slice(lay.ephLen, lay.ephLen + 16);
+        const iv = bytes.slice(lay.ephLen + 16, lay.ephLen + 28);
+        const ctBuf = bytes.slice(lay.ephLen + 28);
+        const aesKey = await deriveSharedAesKey(opts.myPrivateKey, ephPubKey, opts.myPrivateKey, dh2Pub, salt, lay.info);
+        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, ctBuf);
+        plainObj = JSON.parse(new TextDecoder().decode(pt));
+        matchedBranch = lay.branch;
+        break;
+      } catch (e) { /* not this layout / key — try the next candidate */ }
+    }
+    if (!plainObj) throw new Error('decrypt-failed');
+
+    // Defense in depth: the mode claimed inside the authenticated plaintext must match
+    // which key actually unlocked it. A mismatch means something is inconsistent/tampered.
+    if (plainObj.mode !== matchedBranch) throw new Error('mode-mismatch');
+    return { text: plainObj.text, mode: plainObj.mode, id: plainObj.id, ts: plainObj.ts };
+  }
+
+  // Reader for the old "ANGM3:" + base64(JSON) messages, kept so nothing already sent becomes unreadable.
+  async function decryptLegacyV3(packedText, opts) {
+    const envelope = JSON.parse(atob(packedText.slice(MSG_MAGIC.length)));
+    if (envelope.v !== 3) throw new Error('unsupported-version');
+
+    const ephPubKey = await importPublicKeyRaw(b64ToBuf(envelope.eph));
+    const salt = new Uint8Array(b64ToBuf(envelope.salt));
+    const iv = new Uint8Array(b64ToBuf(envelope.iv));
+    const ctBuf = b64ToBuf(envelope.ct);
+
+    const attempts = [];
+    if (envelope.eph2) {
+      attempts.push({ branch: 'anon', dh2Priv: opts.myPrivateKey, dh2Pub: await importPublicKeyRaw(b64ToBuf(envelope.eph2)) });
+    }
+    if (opts.claimedSenderPubRaw) {
+      attempts.push({ branch: 'auth', dh2Priv: opts.myPrivateKey, dh2Pub: await importPublicKeyRaw(opts.claimedSenderPubRaw) });
+    }
+    if (!attempts.length) throw new Error('no-candidate');
+
+    let plainObj = null, matchedBranch = null;
+    for (const a of attempts) {
+      try {
+        const aesKey = await deriveSharedAesKey(opts.myPrivateKey, ephPubKey, a.dh2Priv, a.dh2Pub, salt, MSG_INFO_LEGACY);
+        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, ctBuf);
+        plainObj = JSON.parse(new TextDecoder().decode(pt));
+        matchedBranch = a.branch;
+        break;
+      } catch (e) { /* try next candidate */ }
+    }
+    if (!plainObj) throw new Error('decrypt-failed');
+    if (plainObj.mode !== matchedBranch) throw new Error('mode-mismatch');
+    return { text: plainObj.text, mode: plainObj.mode };
+  }
+
+  // ------------------------------------------------------------------ identity export/import (section 9)
+  // The backup file is protected by its own password (independent of the device unlock
+  // passphrase, though the user may reuse it). It carries the private key (PKCS#8) and the
+  // contact list, AES-GCM-encrypted under a PBKDF2-derived key.
+  // v2 stores its own KDF params (`kdf`, `iter`) so a future change to defaults never
+  // breaks importing a backup made under the old ones. v1 backups (no `kdf`/`iter` fields)
+  // are still accepted for import, read back as pbkdf2 @ 200000 — the values the app used
+  // to hardcode before this field existed.
+  async function exportIdentityBackup(privateKeyPkcs8Buf, publicKeyRawBuf, contactsArray, exportPassword, opts) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const made = await deriveNewKey(exportPassword, salt, opts);
+    const key = made.key;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const payload = JSON.stringify({
+      priv: bufToB64(privateKeyPkcs8Buf),
+      pub: bufToB64(publicKeyRawBuf),
+      contacts: contactsArray || []
+    });
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(payload));
+    const isArgon = made.kdfFields.kdf === 'argon2id';
+    return JSON.stringify(Object.assign({
+      app: 'anigma-identity-backup',
+      v: isArgon ? 3 : 2
+    }, made.kdfFields, {
+      pn: PASSPHRASE_NORM_VERSION,
+      salt: bufToB64(salt),
+      iv: bufToB64(iv),
+      ct: bufToB64(ct)
+    }), null, 2);
+  }
+
+  async function importIdentityBackup(jsonText, importPassword) {
+    const blob = JSON.parse(jsonText);
+    if (!blob || typeof blob !== 'object' || Array.isArray(blob)) throw new Error('bad-format');
+    if (blob.app !== 'anigma-identity-backup' || (blob.v !== 1 && blob.v !== 2 && blob.v !== 3)) throw new Error('bad-format');
+    // Every field must be the right TYPE and size before anything is decoded, so a malformed file is reported as a bad
+    // file (not as a "wrong password") and cannot make the decoder chew on gigabytes.
+    if (typeof blob.salt !== 'string' || typeof blob.iv !== 'string' || typeof blob.ct !== 'string' ||
+        blob.salt.length > 64 || blob.iv.length > 64 || blob.ct.length > 64 * 1024 * 1024) throw new Error('bad-format');
+    const salt = new Uint8Array(b64ToBuf(blob.salt));
+    const iv = new Uint8Array(b64ToBuf(blob.iv));
+    const kdf = blob.kdf || 'pbkdf2';
+    const iterations = blob.iter || 200000; // legacy v1 default, before this field existed
+    if (kdf === 'argon2id') { if (blob.v !== 3 || !validArgon2Params(blob.kp)) throw new Error('bad-format'); }
+    else if (!Number.isInteger(iterations) || iterations < PBKDF2_MIN_ITER || iterations > PBKDF2_MAX_ITER) throw new Error('bad-format');
+    if (salt.length !== 16 || iv.length !== 12) throw new Error('bad-format');
+    let pt;
+    try {
+      pt = (await openWithPassphrase(importPassword, { salt: salt, iv: iv, ct: b64ToBuf(blob.ct), iter: iterations, kdf: kdf, kp: blob.kp, pn: blob.pn })).plain;
+    } catch (e) {
+      if (e && e.message === 'wrong-passphrase') throw new Error('decrypt-failed');
+      throw e;
+    }
+    const payload = JSON.parse(new TextDecoder().decode(pt));
+    return {
+      privPkcs8: b64ToBuf(payload.priv),
+      pubRaw: b64ToBuf(payload.pub),
+      contacts: payload.contacts || []
+    };
+  }
+
+  return {
+    MSG_MAGIC: MSG_MAGIC,
+    ID_PASSPHRASE_MIN_LENGTH: ID_PASSPHRASE_MIN_LENGTH,
+    PBKDF2_ITERATIONS: PBKDF2_ITERATIONS,
+    CURVE_P256: CURVE_P256,
+    CURVE_X25519: CURVE_X25519,
+    curveFromRawPubLen: curveFromRawPubLen,
+    supportsX25519: supportsX25519,
+    bufToB64: bufToB64,
+    b64ToBuf: b64ToBuf,
+    computeFingerprint: computeFingerprint,
+    importPublicKeyRaw: importPublicKeyRaw,
+    generateIdentityKeyPair: generateIdentityKeyPair,
+    generateEphemeralKeyPair: generateEphemeralKeyPair,
+    derivePublicRawFromPrivateKey: derivePublicRawFromPrivateKey,
+    keyFromPassphrase: keyFromPassphrase,
+    deriveMasterKey: deriveMasterKey,
+    deriveNewKey: deriveNewKey,
+    ARGON2_DEFAULT: ARGON2_DEFAULT,
+    validArgon2Params: validArgon2Params,
+    normalizePassphrase: normalizePassphrase,
+    deriveStaticHmacKey: deriveStaticHmacKey,
+    storageAad: storageAad,
+    sealStored: sealStored,
+    openStored: openStored,
+    openWithPassphrase: openWithPassphrase,
+    PASSPHRASE_NORM_VERSION: PASSPHRASE_NORM_VERSION,
+    estimatePasswordStrength: estimatePasswordStrength,
+    ecdhBits: ecdhBits,
+    deriveSharedAesKey: deriveSharedAesKey,
+    encryptMessage: encryptMessage,
+    decryptMessage: decryptMessage,
+    exportIdentityBackup: exportIdentityBackup,
+    importIdentityBackup: importIdentityBackup
+  };
+})();
+</script>
+<script type="text/plain" id="workerBundleContainer">// ====================================================================================
+// ANIGMA — container.js
+// The streaming file-container format used for bulk file encryption (section 3).
+// Shared between the main thread and the worker, so it is a plain script (no ES modules)
+// that both index.html and worker.js load with importScripts()/<script>.
+//
+// Layout on disk (version 2):
+//   "ANGMF" (5) | version (1) | chunkSizeMB (1) | baseNonce (7) | recipientCount (1)
+//   [recipient wrap]*recipientCount   -- each wrap is now VARIABLE length (see below),
+//                                        so recipients can mix curves (P-256 and X25519)
+//   -------------------------------- header ends here -----------------------------
+//   STREAM-encrypted body: a sequence of AES-256-GCM chunks. Decrypted, the body is a
+//   flat sequence of [4-byte BE header length][JSON header][file bytes] records.
+//
+// Version 2 recipient wrap (variable length):
+//   ephPubLen (1) | ephPubRaw (ephPubLen: 65 for P-256, 32 for X25519) | salt (16) |
+//   iv (12) | ct+tag (48)   -- total = 1 + ephPubLen + 76
+// Version 1 recipient wrap (still parsed, for containers made by older builds):
+//   ephPubRaw (65, P-256 only) | salt (16) | iv (12) | ct+tag (48) -- fixed 141 bytes.
+// New plain (single/multi-recipient) containers are always written as version 2; version 1
+// is read-only compatibility.
+//
+// Version 3 (GROUP containers, see docs/groups-spec-v1.md section 5) = the exact version-2
+// layout above, followed by ONE extra "group section" appended right after the direct
+// wraps. It is written ONLY when the caller passes opts.group to buildHeader(); every
+// ordinary file keeps being written as byte-identical version 2, so older builds still
+// open them. recipientCount (the direct wraps) may be 0 in a version-3 file.
+//   groupIdLen (1) | groupId (UTF-8) | cardVersion (4, BE) | groupWrapCount (2, BE) |
+//   [ nodeId (2, BE) | wrappedLen (2, BE) | wrapped (wrappedLen bytes, opaque) ]*groupWrapCount
+// `wrapped` is opaque to this module (the group engine puts the AnigmaCrypto.encryptMessage
+// output for the CEK there). Each entry is self-delimiting, so flipping bytes INSIDE one
+// `wrapped` blob only breaks that node's wrap — the other entries still parse and unwrap.
+// The group section is NOT authenticated by the body chunks (groupId/cardVersion are
+// routing hints); the real binding is each wrap's own AEAD.
+//
+// Version 4 (SENDER-AUTHENTICATED containers) = the exact version-2 layout, plus a TRAILER of
+// recipientCount x 32 bytes appended after the last body chunk (tag i belongs to wrap i):
+//   tag_i = HMAC-SHA-256( K_i, H_final ),  K_i = HKDF( DH(sender static, recipient_i static) )
+//   H_0 = SHA-256("anigma-file-body-v1" || every header byte);
+//   H_n = SHA-256( H_{n-1} || counter(4) || lastFlag(1) || ciphertext chunk n )
+// Why: the body is encrypted under ONE content key that every recipient knows, so by itself it only
+// proves "made by someone holding the key" — any co-recipient could rebuild a different body that
+// the others would accept as from the original sender. K_i can be computed only by the sender and
+// recipient i, so a valid tag proves the sender made this exact header + body for THAT recipient.
+// The reader verifies the tag over the whole ciphertext BEFORE writing any plaintext.
+//
+// STREAM chunk construction (section 3.2):
+//   nonce   = baseNonce(7) || counter(4, big-endian) || lastFlag(1)
+//   AAD     = counter(4, big-endian) || lastFlag(1)          (redundant with the nonce
+//             on purpose — belt and suspenders against nonce-construction mistakes)
+//   lastFlag is 1 only for the true final chunk of the body. Chunks must be produced and
+//   consumed strictly in order; an unexpected counter or a stream that ends before a
+//   lastFlag=1 chunk is an explicit failure, never a silently truncated plaintext.
+// ====================================================================================
+
+const AnigmaContainer = (function () {
+  'use strict';
+
+  const MAGIC = 'ANGMF';
+  const MAGIC_BYTES = [0x41, 0x4E, 0x47, 0x4D, 0x46]; // "ANGMF"
+  const VERSION = 2;           // version written for every non-group container
+  const VERSION_GROUP = 3;     // version written when a group section is present
+  const VERSION_AUTH = 4;      // version written for direct-recipient containers with per-recipient sender tags
+  const AUTH_TAG_SIZE = 32;
+  const MAX_RECIPIENTS = 255;   // recipientCount is a single byte
+  const MAX_GROUP_WRAPS = 256; // sanity cap (a 128-leaf tree needs at most 64 covering nodes)
+  const MAX_GROUP_WRAP_BYTES = 4096;
+  const WRAP_SIZE_V1 = 65 + 16 + 12 + 48; // legacy fixed-size (P-256 only) = 141
+  const WRAP_FIXED_PART = 16 + 12 + 48; // salt + iv + (cek + tag) = 76, same for v2
+  const TAG_SIZE = 16;
+  const DEFAULT_CHUNK_MB = 4;
+  const MIN_CHUNK_MB = 1;
+  const MAX_CHUNK_MB = 16;
+  const ROUND_TO_BYTES = 16 * 1024 * 1024;
+
+  // ------------------------------------------------------------------ small binary helpers
+  function u32be(n) {
+    const b = new Uint8Array(4);
+    b[0] = (n >>> 24) & 0xff; b[1] = (n >>> 16) & 0xff; b[2] = (n >>> 8) & 0xff; b[3] = n & 0xff;
+    return b;
+  }
+  function readU32be(bytes, offset) {
+    return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+  }
+  function concatBytes(parts) {
+    let len = 0;
+    for (const p of parts) len += p.length;
+    const out = new Uint8Array(len);
+    let off = 0;
+    for (const p of parts) { out.set(p, off); off += p.length; }
+    return out;
+  }
+
+  // ------------------------------------------------------------------ header
+  // Writes version 2 (variable-length wraps, so recipients on different curves — P-256 and
+  // X25519 — can be mixed in one container) UNLESS opts.group is given, in which case it
+  // writes version 3 (the same bytes plus the group section). opts.group =
+  //   { groupId: string, cardVersion: uint32, wraps: [{ nodeId: uint16, wrapped: string|Uint8Array }] }
+  // `wrapped` strings are UTF-8 encoded. opts.wraps (direct recipients) may be empty only
+  // for a group container.
+  function buildHeader(opts) {
+    const group = opts.group || null;
+    // recipientCount is ONE byte on the wire; `& 0xff` used to silently wrap 256+ recipients
+    // into a header that no longer matched its own wraps.
+    if (opts.wraps.length > MAX_RECIPIENTS) throw new Error('container-too-many-recipients');
+    const parts = [
+      new Uint8Array(MAGIC_BYTES),
+      new Uint8Array([group ? VERSION_GROUP : (opts.senderAuth ? VERSION_AUTH : VERSION), opts.chunkSizeMB & 0xff]),
+      opts.baseNonce, // 7 bytes
+      new Uint8Array([opts.wraps.length & 0xff])
+    ];
+    for (const w of opts.wraps) {
+      parts.push(new Uint8Array([w.ephPubRaw.length & 0xff]), w.ephPubRaw, w.salt, w.iv, w.ct);
+    }
+    if (group) parts.push(encodeGroupSection(group));
+    return concatBytes(parts);
+  }
+
+  function encodeGroupSection(group) {
+    const enc = new TextEncoder();
+    const idBytes = enc.encode(String(group.groupId));
+    if (idBytes.length < 1 || idBytes.length > 255) throw new Error('container-bad-group-id');
+    const cardVersion = group.cardVersion;
+    if (!Number.isInteger(cardVersion) || cardVersion < 0 || cardVersion > 0xffffffff) throw new Error('container-bad-card-version');
+    const gw = group.wraps || [];
+    if (gw.length < 1 || gw.length > MAX_GROUP_WRAPS) throw new Error('container-bad-group-wrap-count');
+    const parts = [new Uint8Array([idBytes.length]), idBytes, u32be(cardVersion), new Uint8Array([(gw.length >> 8) & 0xff, gw.length & 0xff])];
+    for (const w of gw) {
+      if (!Number.isInteger(w.nodeId) || w.nodeId < 1 || w.nodeId > 0xffff) throw new Error('container-bad-node-id');
+      const wrapped = typeof w.wrapped === 'string' ? enc.encode(w.wrapped) : w.wrapped;
+      if (!(wrapped instanceof Uint8Array) || wrapped.length < 1 || wrapped.length > MAX_GROUP_WRAP_BYTES) throw new Error('container-bad-group-wrap');
+      parts.push(new Uint8Array([(w.nodeId >> 8) & 0xff, w.nodeId & 0xff, (wrapped.length >> 8) & 0xff, wrapped.length & 0xff]), wrapped);
+    }
+    return concatBytes(parts);
+  }
+
+  // Parses the version-3 group section starting at `off`. Returns { group, end }.
+  function parseGroupSection(bytes, off) {
+    const need = (n) => { if (off + n > bytes.length) throw new Error('container-too-short'); };
+    need(1);
+    const idLen = bytes[off++];
+    if (idLen < 1) throw new Error('container-bad-group-id');
+    need(idLen + 6);
+    const groupId = new TextDecoder().decode(bytes.slice(off, off + idLen)); off += idLen;
+    const cardVersion = readU32be(bytes, off); off += 4;
+    const count = (bytes[off] << 8) | bytes[off + 1]; off += 2;
+    if (count < 1 || count > MAX_GROUP_WRAPS) throw new Error('container-bad-group-wrap-count');
+    const wraps = [];
+    for (let i = 0; i < count; i++) {
+      need(4);
+      const nodeId = (bytes[off] << 8) | bytes[off + 1];
+      const len = (bytes[off + 2] << 8) | bytes[off + 3];
+      off += 4;
+      if (len < 1 || len > MAX_GROUP_WRAP_BYTES) throw new Error('container-bad-group-wrap');
+      need(len);
+      wraps.push({ nodeId, wrapped: bytes.slice(off, off + len) });
+      off += len;
+    }
+    return { group: { groupId, cardVersion, wraps }, end: off };
+  }
+
+  // Convenience: a group wrap's opaque bytes as the UTF-8 string they were built from
+  // (the "ANIGMA-MSG:..." text of AnigmaCrypto.encryptMessage).
+  function groupWrapToString(w) { return new TextDecoder().decode(w.wrapped); }
+
+  // Throws a descriptive error for an unrecognized magic or version (section 3.8) instead
+  // of a generic parse failure. Understands both the current version-2 layout (variable-
+  // length wraps) and version-1 containers made by older builds (fixed 141-byte, P-256-
+  // only wraps), so a file encrypted before this update still opens.
+  function parseHeader(bytes) {
+    if (bytes.length < 8) throw new Error('container-too-short');
+    for (let i = 0; i < 5; i++) if (bytes[i] !== MAGIC_BYTES[i]) throw new Error('container-bad-magic');
+    const version = bytes[5];
+    if (version !== 1 && version !== 2 && version !== VERSION_GROUP && version !== VERSION_AUTH) {
+      const e = new Error('container-unknown-version');
+      e.foundVersion = version;
+      throw e;
+    }
+    const chunkSizeMB = bytes[6];
+    const baseNonce = bytes.slice(7, 14);
+    const recipientCount = bytes[14];
+    const wraps = [];
+    let off = 15;
+    if (version === 1) {
+      const headerLength = 15 + recipientCount * WRAP_SIZE_V1;
+      if (bytes.length < headerLength) throw new Error('container-too-short');
+      for (let i = 0; i < recipientCount; i++) {
+        wraps.push({
+          ephPubRaw: bytes.slice(off, off + 65),
+          salt: bytes.slice(off + 65, off + 81),
+          iv: bytes.slice(off + 81, off + 93),
+          ct: bytes.slice(off + 93, off + 141)
+        });
+        off += WRAP_SIZE_V1;
+      }
+      return { version, chunkSizeMB, baseNonce, wraps, group: null, headerLength, trailerLen: 0 };
+    }
+    // version 2 (and 3, whose direct-wrap part is identical): each wrap is prefixed with
+    // its own public-key length.
+    for (let i = 0; i < recipientCount; i++) {
+      if (off + 1 > bytes.length) throw new Error('container-too-short');
+      const ephLen = bytes[off];
+      const wrapLen = 1 + ephLen + WRAP_FIXED_PART;
+      if (off + wrapLen > bytes.length) throw new Error('container-too-short');
+      wraps.push({
+        ephPubRaw: bytes.slice(off + 1, off + 1 + ephLen),
+        salt: bytes.slice(off + 1 + ephLen, off + 1 + ephLen + 16),
+        iv: bytes.slice(off + 1 + ephLen + 16, off + 1 + ephLen + 28),
+        ct: bytes.slice(off + 1 + ephLen + 28, off + 1 + ephLen + 76)
+      });
+      off += wrapLen;
+    }
+    if (version === VERSION_GROUP) {
+      const g = parseGroupSection(bytes, off);
+      // `group` is only ever set for version 3; for version 1/2 it is null.
+      return { version, chunkSizeMB, baseNonce, wraps, group: g.group, headerLength: g.end, trailerLen: 0 };
+    }
+    return { version, chunkSizeMB, baseNonce, wraps, group: null, headerLength: off, trailerLen: version === VERSION_AUTH ? wraps.length * AUTH_TAG_SIZE : 0 };
+  }
+
+  // ------------------------------------------------------------------ masked header (no constant bytes)
+  // The layout above starts with the fixed text "ANGMF" and a small version number — a signature any
+  // scanner can match. New containers therefore store the header as
+  //     salt (16 random bytes) | header XOR keystream(salt)
+  // so that the whole file (header, STREAM body, trailer) looks like random bytes. The keystream needs
+  // NO secret (AES-CTR under SHA-256 of a fixed label + the salt): this hides the structure from
+  // pattern matching, it is not encryption — anyone who knows the scheme can strip it. Real
+  // confidentiality still comes from the wraps and the body. Old containers (starting with the plain
+  // magic) are still read as before.
+  const MASK_SALT_LEN = 16;
+  async function maskKeystream(salt, length) {
+    const keyBytes = new Uint8Array(await crypto.subtle.digest('SHA-256', concatBytes([new TextEncoder().encode('anigma-hdr-mask-v1'), salt])));
+    const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-CTR' }, false, ['encrypt']);
+    const zeros = new Uint8Array(Math.max(length, 1));
+    return new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-CTR', counter: new Uint8Array(16), length: 64 }, key, zeros)).subarray(0, length);
+  }
+  function xorBytes(a, b) { const out = new Uint8Array(a.length); for (let i = 0; i < a.length; i++) out[i] = a[i] ^ b[i]; return out; }
+  async function maskBytes(salt, bytes) { return xorBytes(bytes, await maskKeystream(salt, bytes.length)); }
+
+  // Same options as buildHeader(); returns the masked bytes (what must be written to the file).
+  async function buildMaskedHeader(opts) {
+    const inner = buildHeader(opts);
+    const salt = crypto.getRandomValues(new Uint8Array(MASK_SALT_LEN));
+    return concatBytes([salt, await maskBytes(salt, inner)]);
+  }
+
+  // Blob.arrayBuffer() does not exist before Chrome 76 / Firefox 69 / Safari 14: read through FileReader there.
+  function blobToBuffer(blob) {
+    if (typeof blob.arrayBuffer === 'function') return blob.arrayBuffer();
+    return new Promise(function (resolve, reject) {
+      const r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(r.error || new Error('read-failed')); };
+      r.readAsArrayBuffer(blob);
+    });
+  }
+  // Blob.stream() is missing before Chrome 76 / Firefox 69 / Safari 14.1: hand out 1 MiB slices with the same read()/cancel() shape.
+  function blobReader(blob) {
+    if (typeof blob.stream === 'function') return blob.stream().getReader();
+    let off = 0; const CH = 1048576;
+    return {
+      read: function () {
+        if (off >= blob.size) return Promise.resolve({ done: true, value: undefined });
+        const end = Math.min(off + CH, blob.size), part = blob.slice(off, end); off = end;
+        return blobToBuffer(part).then(function (b) { return { done: false, value: new Uint8Array(b) }; });
+      },
+      cancel: function () { off = blob.size; return Promise.resolve(); },
+      releaseLock: function () {}
+    };
+  }
+  // 'deflate-raw' streams exist from Chrome 103 / Safari 16.4 / Firefox 113 on. Without them files are stored uncompressed
+  // (encrypting still works) and a compressed package from someone else reports "compression-unsupported" instead of failing oddly.
+  let deflateRawOk = null;
+  function deflateRawSupported() {
+    if (deflateRawOk === null) {
+      try { new CompressionStream('deflate-raw'); new DecompressionStream('deflate-raw'); deflateRawOk = true; } catch (e) { deflateRawOk = false; }
+    }
+    return deflateRawOk;
+  }
+
+  // Reads and parses the header of a File/Blob, masked or legacy. Returns
+  //   { info, headerBytes }  where info = parseHeader() result with headerLength = bytes to skip IN THE FILE
+  // (including the salt for masked containers) and headerBytes = those raw file bytes (the value the
+  // version-4 authentication hash covers). Throws 'container-bad-magic' for anything that is not ours.
+  async function readHeader(file) {
+    const MAX_HEADER = 1200000; // 256 group wraps x 4 KiB + slack
+    const first = new Uint8Array(await blobToBuffer(file.slice(0, 15)));
+    let legacy = first.length >= 5;
+    for (let i = 0; i < 5 && legacy; i++) if (first[i] !== MAGIC_BYTES[i]) legacy = false;
+    let want = Math.min(file.size, 4096);
+    for (;;) {
+      const raw = new Uint8Array(await blobToBuffer(file.slice(0, want)));
+      let inner, offset;
+      if (legacy) { inner = raw; offset = 0; }
+      else {
+        if (raw.length < MASK_SALT_LEN + 15) throw new Error('container-bad-magic');
+        const salt = raw.slice(0, MASK_SALT_LEN);
+        inner = await maskBytes(salt, raw.slice(MASK_SALT_LEN));
+        offset = MASK_SALT_LEN;
+        for (let i = 0; i < 5; i++) if (inner[i] !== MAGIC_BYTES[i]) throw new Error('container-bad-magic');
+      }
+      try {
+        const info = parseHeader(inner);
+        info.headerLength += offset;
+        return { info: info, headerBytes: raw.slice(0, info.headerLength) };
+      } catch (e) {
+        if (e.message !== 'container-too-short' || want >= file.size || want >= MAX_HEADER) throw e;
+        want = Math.min(file.size, MAX_HEADER, want * 4);
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------ STREAM chunk cipher
+  function chunkNonce(baseNonce7, counter, lastFlag) {
+    return concatBytes([baseNonce7, u32be(counter), new Uint8Array([lastFlag ? 1 : 0])]);
+  }
+  function chunkAad(counter, lastFlag) {
+    return concatBytes([u32be(counter), new Uint8Array([lastFlag ? 1 : 0])]);
+  }
+
+  async function importCekKey(cekBytes) {
+    return crypto.subtle.importKey('raw', cekBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  }
+
+  async function encryptChunk(cekKey, baseNonce, counter, lastFlag, plaintextBytes) {
+    const iv = chunkNonce(baseNonce, counter, lastFlag);
+    const aad = chunkAad(counter, lastFlag);
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad }, cekKey, plaintextBytes);
+    return new Uint8Array(ct);
+  }
+
+  // Throws 'stream-tampered' on any authentication failure, including a wrong lastFlag
+  // guess caused by truncation/reordering/splicing — this is the anti-truncation property
+  // STREAM is designed to give us.
+  async function decryptChunk(cekKey, baseNonce, counter, lastFlag, ciphertextBytes) {
+    const iv = chunkNonce(baseNonce, counter, lastFlag);
+    const aad = chunkAad(counter, lastFlag);
+    try {
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv, additionalData: aad }, cekKey, ciphertextBytes);
+      return new Uint8Array(pt);
+    } catch (e) {
+      const err = new Error('stream-tampered');
+      throw err;
+    }
+  }
+
+  // Splits a known total plaintext length into chunk descriptors {counter, size, isLast}.
+  function planPlainChunks(totalLen, chunkSizeMB) {
+    const chunkSize = chunkSizeMB * 1024 * 1024;
+    if (totalLen === 0) return [{ counter: 0, size: 0, isLast: true }];
+    const n = Math.ceil(totalLen / chunkSize);
+    const plan = [];
+    for (let i = 0; i < n; i++) {
+      const isLast = i === n - 1;
+      const size = isLast ? (totalLen - i * chunkSize) : chunkSize;
+      plan.push({ counter: i, size, isLast });
+    }
+    return plan;
+  }
+
+  // Splits a known total ciphertext length into block descriptors for decryption. Relies
+  // on the fact that every non-final plaintext chunk is exactly chunkSize bytes, so the
+  // boundary arithmetic is unambiguous; an inconsistent total length simply fails to
+  // decrypt the assumed-final block (see decryptChunk's lastFlag binding).
+  function planCipherBlocks(totalCipherLen, chunkSizeMB) {
+    const full = chunkSizeMB * 1024 * 1024 + TAG_SIZE;
+    if (totalCipherLen <= TAG_SIZE) return [{ counter: 0, offset: 0, size: totalCipherLen, isLast: true }];
+    const numFull = Math.floor(totalCipherLen / full);
+    const remainder = totalCipherLen - numFull * full;
+    const plan = [];
+    let offset = 0;
+    const totalBlocks = remainder === 0 ? numFull : numFull + 1;
+    for (let i = 0; i < totalBlocks; i++) {
+      const isLast = i === totalBlocks - 1;
+      const size = (!isLast) ? full : (remainder === 0 ? full : remainder);
+      plan.push({ counter: i, offset, size, isLast });
+      offset += size;
+    }
+    return plan;
+  }
+
+  // ------------------------------------------------------------------ recipient CEK wraps
+  // Uses the same X3DH-style construction as text messages (AnigmaCrypto.deriveSharedAesKey)
+  // so a forged sender or a mismatched recipient simply fails to unwrap, rather than
+  // silently producing garbage. This is always an authenticated wrap (file sharing has no
+  // anonymous-sender mode), so senderPrivateKey and recipientPublicKey must be on the same
+  // curve — same X3DH constraint as encryptMessage()'s 'auth' mode, and enforced the same
+  // way (an early, clear 'curve-mismatch' rather than letting deriveBits fail obscurely).
+  async function wrapCekForRecipient(cekBytes, recipientPublicKey, senderPrivateKey) {
+    const recipientCurve = recipientPublicKey.algorithm.name === 'X25519' ? AnigmaCrypto.CURVE_X25519 : AnigmaCrypto.CURVE_P256;
+    const senderCurve = senderPrivateKey.algorithm.name === 'X25519' ? AnigmaCrypto.CURVE_X25519 : AnigmaCrypto.CURVE_P256;
+    if (recipientCurve !== senderCurve) throw new Error('curve-mismatch');
+    const eph = await AnigmaCrypto.generateEphemeralKeyPair(recipientCurve);
+    const ephPubRaw = new Uint8Array(await crypto.subtle.exportKey('raw', eph.publicKey));
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const wrapKey = await AnigmaCrypto.deriveSharedAesKey(eph.privateKey, recipientPublicKey, senderPrivateKey, recipientPublicKey, salt, 'anigma-file-wrap-v1');
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, wrapKey, cekBytes));
+    return { ephPubRaw, salt, iv, ct };
+  }
+
+  // Tries every wrap entry in the header against the local identity and a claimed sender
+  // public key, returning the first CEK that unwraps successfully, or null.
+  async function unwrapCek(wraps, myPrivateKey, claimedSenderPublicKey) {
+    for (const w of wraps) {
+      try {
+        const ephPubKey = await AnigmaCrypto.importPublicKeyRaw(w.ephPubRaw.buffer.slice(w.ephPubRaw.byteOffset, w.ephPubRaw.byteOffset + w.ephPubRaw.byteLength));
+        const wrapKey = await AnigmaCrypto.deriveSharedAesKey(myPrivateKey, ephPubKey, myPrivateKey, claimedSenderPublicKey, w.salt, 'anigma-file-wrap-v1');
+        const cek = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: w.iv }, wrapKey, w.ct);
+        return new Uint8Array(cek);
+      } catch (e) { /* not this recipient's wrap, or wrong claimed sender — try the next */ }
+    }
+    return null;
+  }
+
+  // ------------------------------------------------------------------ sender authentication (version 4)
+  async function sha256(bytes) { return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)); }
+  // Start of the running hash over header + ciphertext (see the version-4 note at the top).
+  async function bodyHashInit(headerBytes) {
+    return sha256(concatBytes([new TextEncoder().encode('anigma-file-body-v1'), headerBytes]));
+  }
+  async function bodyHashStep(prevHash, counter, lastFlag, cipherBytes) {
+    return sha256(concatBytes([prevHash, u32be(counter), new Uint8Array([lastFlag ? 1 : 0]), cipherBytes]));
+  }
+  // The per-(sender, recipient) key. `senderPubRaw`/`recipientPubRaw` are bound into the derivation, and
+  // baseNonce (unique per container) is the HKDF salt, so a key is never reusable across files.
+  async function deriveFileAuthKey(myPrivateKey, theirPublicKey, senderPubRaw, recipientPubRaw, baseNonce) {
+    const info = 'anigma-file-auth-v1|' + AnigmaCrypto.bufToB64(senderPubRaw) + '|' + AnigmaCrypto.bufToB64(recipientPubRaw);
+    return AnigmaCrypto.deriveStaticHmacKey(myPrivateKey, theirPublicKey, baseNonce, info);
+  }
+  async function senderAuthTag(authKey, finalHash) {
+    return new Uint8Array(await crypto.subtle.sign('HMAC', authKey, finalHash));
+  }
+  async function verifySenderAuthTag(authKey, finalHash, tagBytes) {
+    if (!tagBytes || tagBytes.length !== AUTH_TAG_SIZE) return false;
+    return crypto.subtle.verify('HMAC', authKey, tagBytes, finalHash);
+  }
+
+  // Same as unwrapCek, but also reports WHICH wrap opened (its index is also the index of this
+  // recipient's sender-authentication tag in a version-4 trailer). Returns { cek, index } or null.
+  async function unwrapCekIndexed(wraps, myPrivateKey, claimedSenderPublicKey) {
+    for (let i = 0; i < wraps.length; i++) {
+      const w = wraps[i];
+      try {
+        const ephPubKey = await AnigmaCrypto.importPublicKeyRaw(w.ephPubRaw.buffer.slice(w.ephPubRaw.byteOffset, w.ephPubRaw.byteOffset + w.ephPubRaw.byteLength));
+        const wrapKey = await AnigmaCrypto.deriveSharedAesKey(myPrivateKey, ephPubKey, myPrivateKey, claimedSenderPublicKey, w.salt, 'anigma-file-wrap-v1');
+        const cek = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: w.iv }, wrapKey, w.ct);
+        return { cek: new Uint8Array(cek), index: i };
+      } catch (e) { /* not this recipient's wrap, or wrong claimed sender */ }
+    }
+    return null;
+  }
+
+  // ------------------------------------------------------------------ path safety (section 3.7)
+  // Rejects (rather than rewrites) anything that is unsafe on at least one mainstream OS:
+  // traversal, absolute paths, control characters, Windows drive/stream syntax (':'), Windows
+  // reserved device names, trailing dot/space (Windows strips them, which can alias another
+  // name), and absurd segment/total lengths.
+  const WIN_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
+  function sanitizeRelativePath(name) {
+    const norm = String(name).replace(/\\/g, '/');
+    if (/[\u0000-\u001f\u007f]/.test(norm)) throw new Error('bad-path');
+    // Bidi override/embedding/isolate controls (U+202A-202E, U+2066-2069) let a name such as
+    // "invoice<RLO>gnp.exe" DISPLAY as "invoiceexe.png" while really ending in ".exe". Refuse them on both
+    // sides. (ZWNJ/ZWJ and LRM/RLM are deliberately still allowed: Persian file names use them legitimately.)
+    if (/[\u202a-\u202e\u2066-\u2069]/.test(norm)) throw new Error('bad-path');
+    const parts = norm.split('/').filter(function (p) { return p.length > 0; });
+    if (!parts.length) throw new Error('bad-path');
+    for (const p of parts) {
+      if (p === '..' || p === '.') throw new Error('bad-path');
+      if (p.length > 255 || p.indexOf(':') !== -1 || /[. ]$/.test(p) || WIN_RESERVED.test(p)) throw new Error('bad-path');
+    }
+    if (norm.startsWith('/') || /^[a-zA-Z]:/.test(norm)) throw new Error('bad-path'); // absolute path
+    const out = parts.join('/');
+    if (out.length > 1024) throw new Error('bad-path');
+    return out;
+  }
+
+  // ------------------------------------------------------------------ per-file record framing
+  function encodeFileHeaderRecord(meta) {
+    const json = JSON.stringify(meta);
+    const jsonBytes = new TextEncoder().encode(json);
+    return concatBytes([u32be(jsonBytes.length), jsonBytes]);
+  }
+
+  // A small incremental byte queue used while decoding: chunks arrive one at a time from
+  // the STREAM decryptor, but file-record boundaries rarely line up with chunk boundaries.
+  function createByteQueue() {
+    let parts = [];
+    let total = 0;
+    return {
+      push(bytes) { if (bytes.length) { parts.push(bytes); total += bytes.length; } },
+      get length() { return total; },
+      // Returns exactly n bytes and removes them, or null if not enough is buffered yet.
+      readExact(n) {
+        if (total < n) return null;
+        if (parts.length === 1 && parts[0].length === n) { const r = parts[0]; parts = []; total = 0; return r; }
+        const out = new Uint8Array(n);
+        let off = 0, i = 0;
+        while (off < n) {
+          const p = parts[i];
+          const take = Math.min(p.length - 0, n - off);
+          out.set(p.subarray(0, take), off);
+          off += take;
+          if (take === p.length) { i++; } else { parts[i] = p.subarray(take); }
+        }
+        parts = parts.slice(i);
+        total -= n;
+        return out;
+      },
+      isEmpty() { return total === 0; }
+    };
+  }
+
+  function planPaddingEntrySize(realTotalLen) {
+    if (realTotalLen <= 0) return 0;
+    const rounded = Math.ceil(realTotalLen / ROUND_TO_BYTES) * ROUND_TO_BYTES;
+    return rounded - realTotalLen;
+  }
+
+  return {
+    blobToBuffer: blobToBuffer,
+    blobReader: blobReader,
+    deflateRawSupported: deflateRawSupported,
+    MAGIC, VERSION, VERSION_GROUP, VERSION_AUTH, AUTH_TAG_SIZE, MAX_RECIPIENTS, MAX_GROUP_WRAPS, MAX_GROUP_WRAP_BYTES, WRAP_SIZE_V1, WRAP_FIXED_PART, TAG_SIZE,
+    DEFAULT_CHUNK_MB, MIN_CHUNK_MB, MAX_CHUNK_MB, ROUND_TO_BYTES,
+    u32be, readU32be, concatBytes,
+    buildHeader, buildMaskedHeader, readHeader, maskKeystream, maskBytes, parseHeader, groupWrapToString,
+    chunkNonce, chunkAad, importCekKey, encryptChunk, decryptChunk,
+    planPlainChunks, planCipherBlocks,
+    wrapCekForRecipient, unwrapCek, unwrapCekIndexed,
+    bodyHashInit, bodyHashStep, deriveFileAuthKey, senderAuthTag, verifySenderAuthTag,
+    sanitizeRelativePath, encodeFileHeaderRecord, createByteQueue,
+    planPaddingEntrySize
+  };
+})();
+</script>
+<script type="text/plain" id="workerBundleWorker">// ====================================================================================
+// ANIGMA — worker.js
+// Runs the heavy part of bulk file encryption/decryption off the main thread: reading
+// File streams, optional per-file compression, STREAM chunk encryption/decryption, and
+// (when a File System Access handle is available) writing the result straight to disk.
+// Only file/handle references and small progress messages cross the thread boundary;
+// bulk bytes travel as transferable ArrayBuffers.
+// ====================================================================================
+
+importScripts('crypto.js', 'container.js');
+
+let cancelled = false;
+
+self.onmessage = async function (ev) {
+  const msg = ev.data;
+  if (msg.op === 'cancel') { cancelled = true; return; }
+  cancelled = false;
+  try {
+    if (msg.op === 'encrypt') {
+      await runEncrypt(msg);
+    } else if (msg.op === 'decrypt') {
+      await runDecrypt(msg);
+    }
+  } catch (e) {
+    post({ type: 'error', message: (e && e.message) ? e.message : String(e) });
+  }
+};
+
+function post(obj, transfer) {
+  self.postMessage(obj, transfer || []);
+}
+
+const COMPRESSIBLE_SKIP_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mkv', 'mov', 'avi', 'mp3', 'aac',
+  'ogg', 'flac', 'zip', '7z', 'rar', 'gz', 'bz2', 'xz', 'pdf', 'docx', 'xlsx', 'pptx', 'heic', 'webm'];
+
+function extOf(name) {
+  const i = name.lastIndexOf('.');
+  return i === -1 ? '' : name.slice(i + 1).toLowerCase();
+}
+function shouldCompress(name, mode) {
+  if (mode === 'none') return false;
+  if (!AnigmaContainer.deflateRawSupported()) return false; // old browser: store uncompressed (still encrypted)
+  if (mode === 'all') return true;
+  return COMPRESSIBLE_SKIP_EXT.indexOf(extOf(name)) === -1; // 'smart'
+}
+
+async function readWholeStream(stream) {
+  const reader = stream.getReader();
+  const parts = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value);
+    total += value.length;
+  }
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const p of parts) { out.set(p, off); off += p.length; }
+  return out;
+}
+
+// Bug report follow-up (encrypt UI appears to "freeze" on file selection): the previous
+// version of this pre-pass read + compressed each file that needs compression in one
+// uninterruptible pair of awaits (readWholeStream then a one-shot compressBytes), with no
+// reportProgress() call anywhere in the loop and no `cancelled` check once a file's
+// compression had begun. For any file large enough (or a compression ratio poor enough)
+// that this takes more than a second or two, the UI showed the "operation in progress"
+// chrome (wake-lock note + Cancel button) with a permanently empty progress bar/stats —
+// measured at ~9.3s of total silence for a single 350MB low-compressibility file — and
+// Cancel did nothing until that file's compression finished, because the only cancellation
+// checkpoint was between files, not inside one. Both are fixed by streaming the read and
+// the compression concurrently, chunk by chunk, checking `cancelled` and reporting progress
+// (via `onChunk`) after every source chunk instead of only after the whole file is done.
+function makeCancelledSignal() { const e = new Error('cancelled-during-prepare'); e.cancelledDuringPrepare = true; return e; }
+
+async function compressFileStreaming(file, onChunk) {
+  const cs = new CompressionStream('deflate-raw');
+  const writer = cs.writable.getWriter();
+  const outReader = cs.readable.getReader();
+  const outParts = [];
+  let outTotal = 0;
+
+  // Drains the compressed side concurrently with writing to it — required so a highly
+  // compressible large file doesn't stall on writable backpressure while nobody is
+  // reading the other end.
+  const drainOut = (async () => {
+    while (true) {
+      const { done, value } = await outReader.read();
+      if (done) return;
+      outParts.push(value);
+      outTotal += value.length;
+    }
+  })();
+
+  const srcReader = AnigmaContainer.blobReader(file);
+  try {
+    while (true) {
+      if (cancelled) throw makeCancelledSignal();
+      const { done, value } = await srcReader.read();
+      if (done) break;
+      await writer.write(value);
+      onChunk(value.length);
+    }
+    await writer.close();
+  } catch (e) {
+    try { await srcReader.cancel(); } catch (e2) {}
+    try { await writer.abort(e); } catch (e2) {}
+    // Aborting the writable side also errors/closes the readable side, which makes the
+    // still-running `drainOut` pump above reject too. Nothing else will ever await that
+    // rejection once we throw `e` below, so left alone it becomes an unhandled promise
+    // rejection (observed: crashes the whole page/worker instead of just this operation).
+    // We already know why it failed — swallow drainOut's rejection here instead.
+    try { await drainOut; } catch (e2) {}
+    throw e;
+  }
+  await drainOut;
+
+  const out = new Uint8Array(outTotal);
+  let off = 0;
+  for (const p of outParts) { out.set(p, off); off += p.length; }
+  return out;
+}
+
+// ------------------------------------------------------------------ ENCRYPT
+async function runEncrypt(msg) {
+  // msg: { files: [{file, relPath}], chunkSizeMB, cekBytes, baseNonce, headerBytes,
+  //        compressMode, roundSize, destination: {mode:'fsapi', handle} | {mode:'blob'} }
+  const cekKey = await AnigmaContainer.importCekKey(msg.cekBytes);
+  const chunkSizeMB = msg.chunkSizeMB;
+  // defence in depth: the UI already checks, but the worker never trusts a size it is handed
+  if (!Number.isInteger(chunkSizeMB) || chunkSizeMB < AnigmaContainer.MIN_CHUNK_MB || chunkSizeMB > AnigmaContainer.MAX_CHUNK_MB) throw new Error('bad-chunk-size');
+  const chunkSize = chunkSizeMB * 1024 * 1024;
+
+  // Pass 1: build per-file metadata. Compressed files must be fully materialized here to
+  // learn their final stored size (a documented trade-off — see help text); uncompressed
+  // files are described by their already-known size and stream through untouched.
+  //
+  // Progress during this pass is reported against original (pre-compression) bytes read,
+  // not the not-yet-known compressed size — the best honest signal available before
+  // compression finishes. `phase: 'preparing'` lets the UI show distinct wording (see
+  // ui.js/i18n.js) instead of silently reusing the "encrypting" numbers for a different
+  // quantity.
+  const totalOriginalAllFiles = msg.files.reduce(function (s, f) { return s + f.file.size; }, 0);
+  let prepBytesRead = 0;
+  let prepLastReport = 0;
+  function reportPrepProgress(fileName, fileIndex) {
+    const now = Date.now();
+    if (now - prepLastReport < 120 && prepBytesRead < totalOriginalAllFiles) return;
+    prepLastReport = now;
+    post({
+      type: 'progress', phase: 'preparing', processed: prepBytesRead, total: totalOriginalAllFiles,
+      fileName: fileName || '', fileIndex: fileIndex || 0, fileCount: msg.files.length
+    });
+  }
+
+  const entries = [];
+  let totalOriginal = 0;
+  for (let fi = 0; fi < msg.files.length; fi++) {
+    if (cancelled) return post({ type: 'cancelled' });
+    const f = msg.files[fi];
+    const relPath = AnigmaContainer.sanitizeRelativePath(f.relPath || f.file.name);
+    const compress = shouldCompress(relPath, msg.compressMode);
+    let storedBytes = null, storedSize = f.file.size;
+    if (compress) {
+      try {
+        storedBytes = await compressFileStreaming(f.file, function (n) {
+          prepBytesRead += n;
+          reportPrepProgress(relPath, fi + 1);
+        });
+      } catch (e) {
+        if (e && e.cancelledDuringPrepare) return post({ type: 'cancelled' });
+        throw e;
+      }
+      storedSize = storedBytes.length;
+    } else {
+      // Not compressed: still counts toward the "preparing" bar so multi-file selections
+      // with a mix of compressed/uncompressed files show continuous progress instead of
+      // jumps, and so a lone uncompressed file doesn't leave the bar at 0% through Pass 1.
+      prepBytesRead += f.file.size;
+      reportPrepProgress(relPath, fi + 1);
+    }
+    // `size` is the original (display) size; `stored` is the exact byte length of the data
+    // run that follows this header in the plaintext stream (compressed length if applicable).
+    const meta = { name: relPath, size: f.file.size, type: f.file.type || '', compressed: compress, stored: storedSize };
+    const headerRecord = AnigmaContainer.encodeFileHeaderRecord(meta);
+    entries.push({ file: f.file, meta, headerRecord, storedSize, storedBytes });
+    totalOriginal += headerRecord.length + storedSize;
+  }
+
+  let padSize = 0;
+  if (msg.roundSize) padSize = AnigmaContainer.planPaddingEntrySize(totalOriginal + 200 /* rough header slack */);
+  let padRecord = null;
+  if (padSize > 0) {
+    padRecord = AnigmaContainer.encodeFileHeaderRecord({ name: '__padding__', size: padSize, stored: padSize, type: '', compressed: false, pad: true });
+  }
+  const totalPlainLen = totalOriginal + (padRecord ? padRecord.length + padSize : 0);
+
+  // Destination
+  let writable = null;
+  const blobParts = [];
+  if (msg.destination.mode === 'fsapi') {
+    writable = await msg.destination.handle.createWritable();
+    await writable.write(msg.headerBytes);
+  } else {
+    blobParts.push(msg.headerBytes);
+  }
+
+  async function emit(bytes) {
+    if (writable) await writable.write(bytes);
+    else blobParts.push(bytes);
+  }
+
+  // Version-4 sender authentication: one running hash over header + every ciphertext chunk, tagged per
+  // recipient at the end (see the version-4 note in container.js). authKeys[i] belongs to wrap i.
+  const authKeys = msg.authKeys && msg.authKeys.length ? msg.authKeys : null;
+  let chainHash = authKeys ? await AnigmaContainer.bodyHashInit(msg.headerBytes) : null;
+  async function emitChunk(ct, counter, isLast) {
+    if (authKeys) chainHash = await AnigmaContainer.bodyHashStep(chainHash, counter, isLast, ct);
+    await emit(ct);
+  }
+
+  // A rolling buffer that accumulates plaintext bytes until a full chunk is ready.
+  let pending = new Uint8Array(0);
+  let bytesConsumedTotal = 0;
+  let chunkCounter = 0;
+  const startTime = Date.now();
+
+  async function pushPlain(bytes) {
+    if (!bytes.length) return;
+    const merged = new Uint8Array(pending.length + bytes.length);
+    merged.set(pending, 0); merged.set(bytes, pending.length);
+    pending = merged;
+    while (true) {
+      const remainingTotal = totalPlainLen - bytesConsumedTotal - pending.length;
+      // Every NON-final chunk must be exactly `chunkSize` plaintext bytes — the decrypt
+      // side's planCipherBlocks() relies on that to re-slice the ciphertext. So: split off
+      // a full chunk whenever more than one chunk's worth has piled up (pending.length >
+      // chunkSize), regardless of remainingTotal — otherwise a single large push (e.g. a
+      // fully-compressed file) could leave several chunks' worth sitting in `pending` and
+      // get dumped into flushFinal() as one oversized "final" block, which the decryptor
+      // cannot correctly re-slice (silent corruption — bug #1). Only when pending is
+      // *exactly* one chunk do we still require remainingTotal > 0 before splitting it
+      // off, so that a plaintext whose length is an exact multiple of chunkSize is instead
+      // left whole for flushFinal(), matching how planCipherBlocks() expects the true
+      // final block to be sized.
+      if (pending.length > chunkSize || (pending.length === chunkSize && remainingTotal > 0)) {
+        const chunk = pending.subarray(0, chunkSize);
+        const ct = await AnigmaContainer.encryptChunk(cekKey, msg.baseNonce, chunkCounter, false, chunk);
+        await emitChunk(ct, chunkCounter, false);
+        bytesConsumedTotal += chunkSize;
+        chunkCounter++;
+        pending = pending.slice(chunkSize);
+        reportProgress();
+      } else {
+        break;
+      }
+    }
+  }
+
+  async function flushFinal() {
+    const ct = await AnigmaContainer.encryptChunk(cekKey, msg.baseNonce, chunkCounter, true, pending);
+    await emitChunk(ct, chunkCounter, true);
+    if (authKeys) {
+      const tags = [];
+      for (const k of authKeys) tags.push(await AnigmaContainer.senderAuthTag(k, chainHash));
+      await emit(AnigmaContainer.concatBytes(tags));
+    }
+    bytesConsumedTotal += pending.length;
+    pending = new Uint8Array(0);
+    reportProgress();
+  }
+
+  let lastReport = 0;
+  function reportProgress(fileName, fileIndex) {
+    const now = Date.now();
+    if (now - lastReport < 120 && bytesConsumedTotal < totalPlainLen) return;
+    lastReport = now;
+    post({
+      type: 'progress', processed: bytesConsumedTotal, total: totalPlainLen,
+      fileName: fileName || '', fileIndex: fileIndex || 0, fileCount: entries.length,
+      elapsedMs: now - startTime
+    });
+  }
+
+  for (let i = 0; i < entries.length; i++) {
+    if (cancelled) { if (writable) await writable.abort(); return post({ type: 'cancelled' }); }
+    const e = entries[i];
+    try {
+      await pushPlain(e.headerRecord);
+      if (e.storedBytes) {
+        await pushPlain(e.storedBytes);
+      } else {
+        const reader = AnigmaContainer.blobReader(e.file);
+        while (true) {
+          if (cancelled) { if (writable) await writable.abort(); return post({ type: 'cancelled' }); }
+          const { done, value } = await reader.read();
+          if (done) break;
+          await pushPlain(value);
+          reportProgress(e.meta.name, i + 1);
+        }
+      }
+    } catch (err) {
+      // Resource-cleanup bug found during a wider review: on any failure partway through
+      // (a File no longer readable because it changed/was deleted after selection, a
+      // QuotaExceededError writing to disk, etc.) this used to leave `writable` — an open
+      // FileSystemWritableFileStream already holding data on disk — neither closed nor
+      // aborted. The self.onmessage try/catch around runEncrypt() still reported the error
+      // to the UI, but the partial file itself was left behind, sometimes with the browser
+      // still holding a write lock on it until the tab/worker was gone. Abort it here (which
+      // discards the partial write, matching what the cancellation path above already does)
+      // before letting the error propagate to that same top-level handler.
+      if (writable) { try { await writable.abort(); } catch (e2) {} }
+      throw err;
+    }
+  }
+  try {
+    if (padRecord) {
+      // crypto.getRandomValues() is capped at 65,536 bytes per call by every browser
+      // (Web Crypto spec) — requesting more throws QuotaExceededError immediately. This loop
+      // used to request up to 1 MiB per call, so any padding target above ~64KB (e.g. the
+      // "Round size to 16MB" option) failed on the very first call (security review #8).
+      const MAX_RANDOM_PER_CALL = 65536;
+      await pushPlain(padRecord);
+      let remaining = padSize;
+      while (remaining > 0) {
+        const take = Math.min(remaining, MAX_RANDOM_PER_CALL);
+        await pushPlain(crypto.getRandomValues(new Uint8Array(take)));
+        remaining -= take;
+      }
+    }
+    await flushFinal();
+  } catch (err) {
+    if (writable) { try { await writable.abort(); } catch (e2) {} }
+    throw err;
+  }
+
+  if (writable) {
+    await writable.close();
+    post({ type: 'done', mode: 'fsapi' });
+  } else {
+    post({ type: 'done', mode: 'blob', parts: blobParts }, blobParts.map(function (p) { return p.buffer; }));
+  }
+}
+
+// ------------------------------------------------------------------ DECRYPT
+async function runDecrypt(msg) {
+  // msg: { containerFile, headerLength, chunkSizeMB, baseNonce, cekBytes, destDirHandle,
+  //        totalCipherLen }
+  const cekKey = await AnigmaContainer.importCekKey(msg.cekBytes);
+  // Version-4 containers end with one 32-byte sender-authentication tag per recipient (not part of the
+  // STREAM body). `trailerLen` is 0 for older containers, which have no such proof.
+  const trailerLen = msg.trailerLen || 0;
+  if (msg.containerFile.size < msg.headerLength + trailerLen) return post({ type: 'error', message: 'stream-truncated' });
+  const bodyEnd = msg.containerFile.size - trailerLen;
+  const body = msg.containerFile.slice(msg.headerLength, bodyEnd);
+  const totalCipherLen = body.size;
+  if (!Number.isInteger(msg.chunkSizeMB) || msg.chunkSizeMB < AnigmaContainer.MIN_CHUNK_MB || msg.chunkSizeMB > AnigmaContainer.MAX_CHUNK_MB) throw new Error('bad-chunk-size');
+  const plan = AnigmaContainer.planCipherBlocks(totalCipherLen, msg.chunkSizeMB);
+
+  if (trailerLen > 0) {
+    // Check "this exact header + ciphertext was made by the claimed sender for ME" before a single byte
+    // of plaintext is produced. Otherwise a co-recipient's rebuilt body (same content key) would be
+    // decrypted and written out before the mismatch showed. Costs one extra read of the file.
+    if (!msg.authKey || !(msg.wrapIndex >= 0)) return post({ type: 'error', message: 'sender-auth-failed' });
+    const headerBytes = new Uint8Array(await AnigmaContainer.blobToBuffer(msg.containerFile.slice(0, msg.headerLength)));
+    let h = await AnigmaContainer.bodyHashInit(headerBytes);
+    for (const block of plan) {
+      if (cancelled) return post({ type: 'cancelled' });
+      const cb = new Uint8Array(await AnigmaContainer.blobToBuffer(msg.containerFile.slice(msg.headerLength + block.offset, msg.headerLength + block.offset + block.size)));
+      h = await AnigmaContainer.bodyHashStep(h, block.counter, block.isLast, cb);
+    }
+    const tags = new Uint8Array(await AnigmaContainer.blobToBuffer(msg.containerFile.slice(bodyEnd, msg.containerFile.size)));
+    const mine = tags.slice(msg.wrapIndex * AnigmaContainer.AUTH_TAG_SIZE, (msg.wrapIndex + 1) * AnigmaContainer.AUTH_TAG_SIZE);
+    if (!(await AnigmaContainer.verifySenderAuthTag(msg.authKey, h, mine))) return post({ type: 'error', message: 'sender-auth-failed' });
+  }
+
+  const queue = AnigmaContainer.createByteQueue();
+  const startTime = Date.now();
+  let processed = 0;
+  let lastReport = 0;
+  function reportProgress(fileName) {
+    const now = Date.now();
+    if (now - lastReport < 120) return;
+    lastReport = now;
+    post({ type: 'progress', processed, total: totalCipherLen, fileName: fileName || '', elapsedMs: now - startTime });
+  }
+
+  // File-writing state machine: we may be mid-way through writing a file's data when a
+  // decrypted chunk boundary falls inside it, so state persists across chunk iterations.
+  let currentWriter = null; // { sink, decomp, name }
+  let sawFinalFlag = false;
+  const manifestList = [];
+  const usingFsApi = !!msg.destDirHandle;
+
+  // Finds a leaf name that doesn't already exist in dirHandle, appending " (1)", " (2)",
+  // etc. before the extension — same convention browsers use for downloads. Bounded at 999
+  // attempts so a pathological package (or directory) can't spin forever.
+  async function uniqueLeafName(dirHandle, leaf) {
+    async function exists(name) {
+      try { await dirHandle.getFileHandle(name, { create: false }); return true; }
+      catch (e) { return false; }
+    }
+    if (!(await exists(leaf))) return leaf;
+    const dot = leaf.lastIndexOf('.');
+    const base = dot > 0 ? leaf.slice(0, dot) : leaf;
+    const ext = dot > 0 ? leaf.slice(dot) : '';
+    for (let i = 1; i <= 999; i++) {
+      const candidate = base + ' (' + i + ')' + ext;
+      if (!(await exists(candidate))) return candidate;
+    }
+    // Astronomically unlikely, but never loop forever — fall back to a random suffix.
+    return base + ' (' + Date.now().toString(36) + ')' + ext;
+  }
+
+  // Security review #3b: a compressed file's stored (compressed) length is small, but the
+  // decompressed output has no size limit at all — a crafted package can expand a package a
+  // few hundred KB in size into hundreds of MB or more (a "decompression bomb"), all before
+  // any size warning fires, because that warning is computed from the PACKAGE size, not the
+  // eventual decompressed size. Cap actual decompressed bytes per file, independent of
+  // whatever the (unauthenticated) 'size' field in the file's own header claims.
+  const MAX_DECOMPRESSED_BYTES_PER_FILE = 512 * 1024 * 1024; // 512 MiB — generous for normal use, finite in the worst case
+  // ...and a cap across ALL files of one package, since many small bombs add up just as well.
+  const MAX_DECOMPRESSED_BYTES_TOTAL = 4 * 1024 * 1024 * 1024; // 4 GiB
+  let decompressedTotal = 0;
+
+  async function openWriterFor(meta) {
+    if (meta.pad) return null; // padding: bytes are simply discarded, nothing to write
+    if (msg.previewOnly) return null;
+    // Security review #2: sanitizeRelativePath() was only ever called on the ENCRYPT side
+    // (worker.js's runEncrypt, via container.js). A package's per-file name is plaintext,
+    // unauthenticated JSON that travels inside the encrypted body but is never checked
+    // against the recipient's own identity — a malicious *or* corrupted package could carry
+    // '../../elsewhere/file' (path traversal, on browsers without the File System Access
+    // API — every mobile browser today) or otherwise-dangerous names. Reject the same way
+    // encryption already does, rather than trusting a name that only ever passed through
+    // the sender's copy of this check.
+    const safeName = AnigmaContainer.sanitizeRelativePath(meta.name);
+    let sink;
+    if (usingFsApi) {
+      const parts = safeName.split('/');
+      let dirHandle = msg.destDirHandle;
+      for (let i = 0; i < parts.length - 1; i++) {
+        dirHandle = await dirHandle.getDirectoryHandle(parts[i], { create: true });
+      }
+      // getFileHandle({create:true}) silently truncates an existing file with the same
+      // name (security review #2). The worker has no UI to ask "overwrite?", so instead of
+      // either silently destroying an existing file or blocking the whole decrypt on a
+      // round-trip to the main thread, auto-rename the way browser downloads do: "name.ext"
+      // -> "name (1).ext" -> "name (2).ext" ... The manifest (shown to the user before this
+      // point, and in the 'file' progress messages) still reports the package's original
+      // name, so nothing is hidden — only silent data loss is avoided.
+      const finalLeaf = await uniqueLeafName(dirHandle, parts[parts.length - 1]);
+      const fileHandle = await dirHandle.getFileHandle(finalLeaf, { create: true });
+      const writable = await fileHandle.createWritable();
+      sink = {
+        write: function (b) { return writable.write(b); },
+        close: function () { return writable.close(); },
+        // Used only on tamper/truncation/cancellation, never on success: abort() discards
+        // whatever was written instead of finalizing it, so a failed decrypt never leaves
+        // behind a file that *looks* complete but is actually truncated/corrupted data.
+        abort: function () { return writable.abort(); }
+      };
+    } else {
+      // No destination folder handle — either the browser has no File System Access API
+      // at all (every mobile browser today) or the caller chose not to use it. Buffer
+      // this file's decrypted bytes in memory instead and hand them back to the main
+      // thread as one message per finished file, so it can offer them as a download
+      // (single file) or bundle them into a .zip (several files) — either way, decrypt
+      // still works instead of being unavailable outside desktop Chromium/Edge.
+      const memParts = []; let memTotal = 0;
+      sink = {
+        write: function (b) { memParts.push(b); memTotal += b.length; return Promise.resolve(); },
+        close: function () {
+          const out = new Uint8Array(memTotal);
+          let off = 0;
+          for (const p of memParts) { out.set(p, off); off += p.length; }
+          post({ type: 'file', name: safeName, bytes: out }, [out.buffer]);
+          return Promise.resolve();
+        },
+        // Discard silently: on error there is no destination handle to abort, and posting
+        // a 'file' message with partial/unauthenticated bytes here would let a failed
+        // (tampered/truncated) decrypt still hand the caller data as if it were trustworthy.
+        abort: function () { memParts.length = 0; memTotal = 0; return Promise.resolve(); }
+      };
+    }
+    let decomp = null;
+    if (meta.compressed) {
+      if (!AnigmaContainer.deflateRawSupported()) throw new Error('compression-unsupported');
+      decomp = new DecompressionStream('deflate-raw');
+      pumpDecompression(decomp, sink); // fire-and-forget pump; awaited via closeWriter
+    }
+    return { sink: sink, decomp: decomp, name: safeName };
+  }
+
+  // Pipes a DecompressionStream's output into the destination sink in the background.
+  // Enforces MAX_DECOMPRESSED_BYTES_PER_FILE (security review #3b, decompression bomb).
+  function pumpDecompression(decomp, sink) {
+    const reader = decomp.readable.getReader();
+    let total = 0;
+    async function pump() {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        total += value.length;
+        decompressedTotal += value.length;
+        if (total > MAX_DECOMPRESSED_BYTES_PER_FILE || decompressedTotal > MAX_DECOMPRESSED_BYTES_TOTAL) {
+          await reader.cancel('decompression-bomb').catch(function () {});
+          throw new Error('decompression-bomb');
+        }
+        await sink.write(value);
+      }
+    }
+    decomp._pumpPromise = pump();
+  }
+
+  async function writeToCurrent(state, bytes) {
+    if (!state) return; // padding
+    if (state.decomp) {
+      const w = state.decomp.writable.getWriter();
+      await w.write(bytes);
+      w.releaseLock();
+    } else {
+      await state.sink.write(bytes);
+    }
+  }
+
+  async function closeWriter(state) {
+    if (!state) return;
+    if (state.decomp) {
+      await state.decomp.writable.getWriter().close().catch(function () {});
+      await state.decomp._pumpPromise;
+    }
+    await state.sink.close();
+  }
+
+  // Error-path counterpart to closeWriter(): used when a file was left mid-write by a
+  // tamper/truncation error or a cancellation, where the correct outcome is discarding
+  // that partial data, not finalizing it as if it were a complete, trustworthy file.
+  async function abortWriter(state) {
+    if (!state) return;
+    if (state.decomp) {
+      await state.decomp.writable.getWriter().abort().catch(function () {});
+      await state.decomp._pumpPromise.catch(function () {});
+    }
+    await state.sink.abort();
+  }
+
+  // Holds a peeked-but-not-yet-consumed 4-byte length prefix when the queue doesn't yet
+  // have the full JSON header that follows it.
+  const MAX_RECORD_JSON_BYTES = 64 * 1024; // real per-file metadata is a few dozen bytes at most
+  let peekedLen = null;
+  let pendingMeta = null; // {meta, remaining}
+  async function drainRecords() {
+    while (true) {
+      if (!pendingMeta) {
+        if (peekedLen === null) {
+          const lenBytes = queue.readExact(4);
+          if (!lenBytes) return;
+          peekedLen = AnigmaContainer.readU32be(lenBytes, 0);
+          // A legitimate encoder never writes a record header this large (security review
+          // #3, same family as the missing-`stored` bug below): reject up front rather than
+          // stalling drainRecords until enough ciphertext has arrived to even attempt it.
+          if (peekedLen > MAX_RECORD_JSON_BYTES) throw new Error('stream-tampered');
+        }
+        const jsonBytes = queue.readExact(peekedLen);
+        if (!jsonBytes) return; // wait for more chunks; peekedLen is retained
+        peekedLen = null;
+        let meta;
+        try { meta = JSON.parse(new TextDecoder().decode(jsonBytes)); }
+        catch (e) { throw new Error('stream-tampered'); }
+        // Security review #3a: a record missing (or lying about) `stored` used to become
+        // `pendingMeta.remaining = NaN`. `NaN === 0` is false and `Math.min(NaN, n)` is
+        // NaN, which is also not `=== 0`, so the loop below never terminated and never took
+        // any bytes either — an infinite spin that pegs a CPU core and grows the queue
+        // forever (observed: ~2GB heap / OOM within seconds on a malicious package).
+        // Validate every field this code actually depends on before trusting it.
+        const nameOk = meta.pad ? true : (typeof meta.name === 'string' && meta.name.length > 0);
+        const storedOk = Number.isInteger(meta.stored) && meta.stored >= 0;
+        if (!nameOk || !storedOk) throw new Error('stream-tampered');
+        if (!meta.pad) manifestList.push({ name: meta.name, size: meta.size, compressed: !!meta.compressed });
+        pendingMeta = { meta, remaining: meta.stored };
+        currentWriter = await openWriterFor(meta);
+        reportProgress(meta.name);
+      }
+      if (pendingMeta.remaining === 0) {
+        await closeWriter(currentWriter);
+        currentWriter = null; pendingMeta = null;
+        continue;
+      }
+      const take = Math.min(pendingMeta.remaining, queue.length);
+      if (take === 0) return;
+      const bytes = queue.readExact(take);
+      await writeToCurrent(currentWriter, bytes);
+      pendingMeta.remaining -= take;
+      if (pendingMeta.remaining === 0) {
+        await closeWriter(currentWriter);
+        currentWriter = null; pendingMeta = null;
+      }
+    }
+  }
+
+  for (const block of plan) {
+    if (cancelled) { if (currentWriter) { try { await abortWriter(currentWriter); } catch (e2) {} } return post({ type: 'cancelled' }); }
+    const cipherBytes = new Uint8Array(await AnigmaContainer.blobToBuffer(msg.containerFile.slice(msg.headerLength + block.offset, msg.headerLength + block.offset + block.size)));
+    let plain;
+    try {
+      plain = await AnigmaContainer.decryptChunk(cekKey, msg.baseNonce, block.counter, block.isLast, cipherBytes);
+    } catch (e) {
+      // Resource-cleanup bug found during a wider review: tamper detection used to `return`
+      // immediately here, leaving `currentWriter` (an open FileSystemWritableFileStream —
+      // and, for a compressed file, its DecompressionStream pump) neither closed nor
+      // aborted whenever tampering was detected partway through writing a file. The UI still
+      // correctly reported the error, but the partial file on disk was left behind with a
+      // write lock the browser might hold until the tab/worker was gone — and worse,
+      // `closeWriter()` finalizes a file rather than discarding it, so using that here would
+      // have left a corrupted file that *looks* complete. `abortWriter()` discards it
+      // instead (best-effort: not worth failing the already-failed operation over a
+      // secondary abort error).
+      if (currentWriter) { try { await abortWriter(currentWriter); } catch (e2) {} }
+      return post({ type: 'error', message: 'stream-tampered' });
+    }
+    if (block.isLast) sawFinalFlag = true;
+    queue.push(plain);
+    processed += block.size;
+    try {
+      await drainRecords();
+    } catch (err) {
+      // Any failure while writing records (bad name, decompression bomb, corrupt deflate data,
+      // disk error) must discard the half-written file, not leave it open/finalized.
+      if (currentWriter) { try { await abortWriter(currentWriter); } catch (e2) {} currentWriter = null; }
+      throw err;
+    }
+    reportProgress();
+  }
+
+  if (!sawFinalFlag || pendingMeta || peekedLen !== null) {
+    // The stream ended without ever authenticating a lastFlag=1 chunk, ended mid-record, or
+    // ended with an unconsumed length prefix waiting on a JSON header that never fully
+    // arrived: treat all three as a truncated/tampered package, never as a silently short
+    // result. Same cleanup note as the tamper-detection catch above: `currentWriter` may
+    // still be open here (mid-file when the stream ran out), and abortWriter() (not
+    // closeWriter()) is what correctly discards it instead of finalizing a truncated file.
+    if (currentWriter) { try { await abortWriter(currentWriter); } catch (e2) {} }
+    return post({ type: 'error', message: 'stream-truncated' });
+  }
+
+  if (msg.previewOnly) post({ type: 'manifest', files: manifestList });
+  else post({ type: 'done' });
+}
+</script>
+<script type="text/plain" id="workerBundleArgon2">/* Anigma vendor/argon2id.js — @noble/hashes 2.4.0 (MIT, (c) Paul Miller) Argon2id + BLAKE2b, bundled by tools/argon2/build.sh. Verified against the RFC 9106 test vector in tests/argon2.test.js. */
+(()=>{var Et=Object.defineProperty;var Bt=(e,t,n)=>t in e?Et(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n;var m=(e,t,n)=>Bt(e,typeof t!="symbol"?t+"":t,n);function it(e){return e instanceof Uint8Array||ArrayBuffer.isView(e)&&e.constructor.name==="Uint8Array"&&"BYTES_PER_ELEMENT"in e&&e.BYTES_PER_ELEMENT===1}var W=e=>e?`"${e}" `:"";function $(e,t=""){if(typeof e!="number")throw new TypeError(W(t)+"expected number, got "+typeof e);if(!Number.isSafeInteger(e)||e<0)throw new RangeError(W(t)+"expected integer >= 0, got "+e);return e}function S(e,t,n=""){if(it(e)&&(t===void 0||e.length===t))return e;t!==void 0&&$(t,"length");let o=it(e),i=t!==void 0?` of length ${t}`:"",r=o?`length=${e.length}`:`type=${typeof e}`,f=W(n)+"expected Uint8Array"+i+", got "+r;throw o?new RangeError(f):new TypeError(f)}function Z(e){return Uint8Array.from(S(e))}var Ut=(e,t)=>{if(e===null||typeof e!="object"||Array.isArray(e))throw new TypeError((t==="object"?"":`"${t}" `)+"expected object, got type="+typeof e)},st=(e,t)=>{Ut(e,t);let n=Object.getPrototypeOf(e);if(n!==Object.prototype&&n!==null)throw new TypeError(`"${t}" expected plain object`);if(Object.hasOwn(e,"__proto__"))throw new TypeError(`"${t}.__proto__" is not allowed`)};function q(e,t=!0){if(e.destroyed)throw new Error("hash was destroyed");if(t&&e.finished)throw new Error("digest() was already called")}function ct(e,t){S(e,void 0,"output");let n=t.outputLen;if(!(e.length>=n))throw new RangeError('"output" expected length >= '+n)}function V(e){return new Uint8Array(e.buffer,e.byteOffset,e.byteLength)}function j(e){return new Uint32Array(e.buffer,e.byteOffset,Math.floor(e.byteLength/4))}function O(...e){for(let t=0;t<e.length;t++)e[t].fill(0)}var ft=new Uint8Array(new Uint32Array([287454020]).buffer)[0]===68;function lt(e){return e<<24&4278190080|e<<8&16711680|e>>>8&65280|e>>>24&255}var U=ft?e=>e:e=>lt(e)>>>0;function Lt(e){for(let t=0;t<e.length;t++)e[t]=lt(e[t]);return e}var M=ft?e=>e:Lt;function Tt(e){if(typeof e!="string")throw new TypeError("string expected");let t=new TextEncoder().encode(e);try{return new Uint8Array(t)}finally{O(t)}}function C(e,t=""){return typeof e=="string"?Tt(e):S(e,void 0,t)}function z(e,t,n="opts"){return st(e,"defaults"),t!==void 0&&st(t,n),Object.assign(Object.create(null),e,t)}function ht(e,t={}){if(typeof e!="function")throw new TypeError('"hashCons" expected function, got type='+typeof e);t=z({},t,"info");let n=(i,r)=>e(r).update(i).digest(),o=e(void 0);return n.outputLen=o.outputLen,n.blockLen=o.blockLen,n.canXOF=o.canXOF,n.create=i=>e(i),Object.assign(n,t),Object.freeze(n)}var ut=Uint8Array.from([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,14,10,4,8,9,15,13,6,1,12,0,2,11,7,5,3,11,8,12,0,5,2,15,13,10,14,3,6,7,1,9,4,7,9,3,1,13,12,11,14,2,6,5,10,4,0,15,8,9,0,5,7,2,4,10,15,14,1,11,12,6,8,3,13,2,12,6,10,0,11,8,3,4,13,7,5,15,14,1,9,12,5,1,15,14,13,4,10,0,7,6,3,9,2,8,11,13,11,7,14,12,1,3,9,5,0,15,4,8,6,2,10,6,15,14,9,11,3,0,8,12,2,13,7,1,4,10,5,10,2,8,4,7,6,1,5,15,11,9,14,3,12,13,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,14,10,4,8,9,15,13,6,1,12,0,2,11,7,5,3,11,8,12,0,5,2,15,13,10,14,3,6,7,1,9,4,7,9,3,1,13,12,11,14,2,6,5,10,4,0,15,8,9,0,5,7,2,4,10,15,14,1,11,12,6,8,3,13,2,12,6,10,0,11,8,3,4,13,7,5,15,14,1,9]);var at=e=>e/2**32|0,pt=e=>e>>>0;var J=(e,t,n)=>e>>>n|t<<32-n,Q=(e,t,n)=>e<<32-n|t>>>n,dt=(e,t,n)=>e<<64-n|t>>>n-32,yt=(e,t,n)=>e>>>n-32|t<<64-n,wt=(e,t)=>t,xt=(e,t)=>e;function K(e,t,n,o){let i=(t>>>0)+(o>>>0);return{h:e+n+(i/2**32|0)|0,l:i|0}}var tt=(e,t,n)=>(e>>>0)+(t>>>0)+(n>>>0),et=(e,t,n,o)=>t+n+o+(e/2**32|0)|0;var B=Uint32Array.from([4089235720,1779033703,2227873595,3144134277,4271175723,1013904242,1595750129,2773480762,2917565137,1359893119,725511199,2600822924,4215389547,528734635,327033209,1541459225]),s=new Uint32Array(32);function N(e,t,n,o,i,r){let f=i[r],l=i[r+1],c=s[2*e],a=s[2*e+1],h=s[2*t],d=s[2*t+1],u=s[2*n],w=s[2*n+1],p=s[2*o],y=s[2*o+1],x=tt(c,h,f);a=et(x,a,d,l),c=x|0;let b=y^a,g=p^c;y=wt(b,g),p=xt(b,g),{h:w,l:u}=K(w,u,y,p),b=d^w,g=h^u,d=J(b,g,24),h=Q(b,g,24),s[2*e]=c,s[2*e+1]=a,s[2*t]=h,s[2*t+1]=d,s[2*n]=u,s[2*n+1]=w,s[2*o]=p,s[2*o+1]=y}function R(e,t,n,o,i,r){let f=i[r],l=i[r+1],c=s[2*e],a=s[2*e+1],h=s[2*t],d=s[2*t+1],u=s[2*n],w=s[2*n+1],p=s[2*o],y=s[2*o+1],x=tt(c,h,f);a=et(x,a,d,l),c=x|0;let b=y^a,g=p^c;y=J(b,g,16),p=Q(b,g,16),{h:w,l:u}=K(w,u,y,p),b=d^w,g=h^u,d=dt(b,g,63),h=yt(b,g,63),s[2*e]=c,s[2*e+1]=a,s[2*t]=h,s[2*t+1]=d,s[2*n]=u,s[2*n+1]=w,s[2*o]=p,s[2*o+1]=y}function Ht(e,t={},n,o,i){if($(n),e<=0||e>n)throw new Error('"dkLen" must be 1..'+n+", got "+e);let{key:r,salt:f,personalization:l}=t;if(r!==void 0&&(r.length<1||r.length>n))throw new Error('"key" expected to be undefined or of length=1..'+n);f!==void 0&&S(f,o,"salt"),l!==void 0&&S(l,i,"personalization")}var nt=class{constructor(t,n){m(this,"buffer");m(this,"buffer32");m(this,"finished",!1);m(this,"destroyed",!1);m(this,"length",0);m(this,"pos",0);m(this,"blockLen");m(this,"outputLen");m(this,"canXOF",!1);$(t),$(n),this.blockLen=t,this.outputLen=n,this.buffer=new Uint8Array(t),this.buffer32=j(this.buffer)}update(t){q(this),S(t);let{blockLen:n,buffer:o,buffer32:i}=this,r=t.length,f=t.byteOffset,l=t.buffer;for(let c=0;c<r;){this.pos===n&&(M(i),this.compress(i,0,!1),M(i),this.pos=0);let a=Math.min(n-this.pos,r-c),h=f+c;if(a===n&&!(h%4)&&c+a<r){let d=new Uint32Array(l,h,Math.floor((r-c)/4));M(d);for(let u=0;c+n<r;u+=i.length,c+=n)this.length+=n,this.compress(d,u,!1);M(d);continue}o.set(c===0&&a===r?t:t.subarray(c,c+a),this.pos),this.pos+=a,this.length+=a,c+=a}return this}digestInto(t){if(q(this),ct(t,this),t.byteOffset&3)throw new RangeError('"output" expected 4-byte aligned byteOffset, got '+t.byteOffset);let{pos:n,buffer32:o}=this;this.finished=!0,this.buffer.fill(0,n),M(o),this.compress(o,0,!0),M(o);let i=this.get(),r=t===this.buffer?o:j(t),f=Math.floor(this.outputLen/4);for(let h=0;h<f;h++)r[h]=U(i[h]);let l=this.outputLen%4;if(!l)return;let c=f*4,a=i[f];for(let h=0;h<l;h++)t[c+h]=a>>>8*h}digest(){let{buffer:t,outputLen:n}=this;this.digestInto(t);let o=t.slice(0,n);return this.destroy(),o}_cloneInto(t){let{buffer:n,length:o,finished:i,destroyed:r,outputLen:f,pos:l}=this;return t||(t=new this.constructor({dkLen:f})),t.set(...this.get()),t.buffer.set(n),t.destroyed=r,t.finished=i,t.length=o,t.pos=l,t.outputLen=f,t}clone(){return this._cloneInto()}},rt=class extends nt{constructor(n={}){n=z({},n);let o=n.dkLen===void 0?64:n.dkLen;super(128,o);m(this,"v0l",B[0]|0);m(this,"v0h",B[1]|0);m(this,"v1l",B[2]|0);m(this,"v1h",B[3]|0);m(this,"v2l",B[4]|0);m(this,"v2h",B[5]|0);m(this,"v3l",B[6]|0);m(this,"v3h",B[7]|0);m(this,"v4l",B[8]|0);m(this,"v4h",B[9]|0);m(this,"v5l",B[10]|0);m(this,"v5h",B[11]|0);m(this,"v6l",B[12]|0);m(this,"v6h",B[13]|0);m(this,"v7l",B[14]|0);m(this,"v7h",B[15]|0);Ht(o,n,64,16,16);let{key:i,personalization:r,salt:f}=n,l=0;if(i!==void 0&&(S(i,void 0,"key"),l=i.length),this.v0l^=this.outputLen|l<<8|65536|1<<24,f!==void 0){S(f,void 0,"salt");let c=j(Z(f));this.v4l^=U(c[0]),this.v4h^=U(c[1]),this.v5l^=U(c[2]),this.v5h^=U(c[3])}if(r!==void 0){S(r,void 0,"personalization");let c=j(Z(r));this.v6l^=U(c[0]),this.v6h^=U(c[1]),this.v7l^=U(c[2]),this.v7h^=U(c[3])}if(i!==void 0){let c=new Uint8Array(this.blockLen);c.set(i),this.update(c),O(c)}}get(){let{v0l:n,v0h:o,v1l:i,v1h:r,v2l:f,v2h:l,v3l:c,v3h:a,v4l:h,v4h:d,v5l:u,v5h:w,v6l:p,v6h:y,v7l:x,v7h:b}=this;return[n,o,i,r,f,l,c,a,h,d,u,w,p,y,x,b]}set(n,o,i,r,f,l,c,a,h,d,u,w,p,y,x,b){this.v0l=n|0,this.v0h=o|0,this.v1l=i|0,this.v1h=r|0,this.v2l=f|0,this.v2h=l|0,this.v3l=c|0,this.v3h=a|0,this.v4l=h|0,this.v4h=d|0,this.v5l=u|0,this.v5h=w|0,this.v6l=p|0,this.v6h=y|0,this.v7l=x|0,this.v7h=b|0}compress(n,o,i){let{v0l:r,v0h:f,v1l:l,v1h:c,v2l:a,v2h:h,v3l:d,v3h:u,v4l:w,v4h:p,v5l:y,v5h:x,v6l:b,v6h:g,v7l:T,v7h:L}=this;s[0]=r,s[1]=f,s[2]=l,s[3]=c,s[4]=a,s[5]=h,s[6]=d,s[7]=u,s[8]=w,s[9]=p,s[10]=y,s[11]=x,s[12]=b,s[13]=g,s[14]=T,s[15]=L,s.set(B,16);let H=pt(this.length),I=at(this.length);s[24]=B[8]^H,s[25]=B[9]^I,i&&(s[28]=~s[28],s[29]=~s[29]);let A=0,k=ut;for(let _=0;_<12;_++)N(0,4,8,12,n,o+2*k[A++]),R(0,4,8,12,n,o+2*k[A++]),N(1,5,9,13,n,o+2*k[A++]),R(1,5,9,13,n,o+2*k[A++]),N(2,6,10,14,n,o+2*k[A++]),R(2,6,10,14,n,o+2*k[A++]),N(3,7,11,15,n,o+2*k[A++]),R(3,7,11,15,n,o+2*k[A++]),N(0,5,10,15,n,o+2*k[A++]),R(0,5,10,15,n,o+2*k[A++]),N(1,6,11,12,n,o+2*k[A++]),R(1,6,11,12,n,o+2*k[A++]),N(2,7,8,13,n,o+2*k[A++]),R(2,7,8,13,n,o+2*k[A++]),N(3,4,9,14,n,o+2*k[A++]),R(3,4,9,14,n,o+2*k[A++]);this.v0l^=s[0]^s[16],this.v0h^=s[1]^s[17],this.v1l^=s[2]^s[18],this.v1h^=s[3]^s[19],this.v2l^=s[4]^s[20],this.v2h^=s[5]^s[21],this.v3l^=s[6]^s[22],this.v3h^=s[7]^s[23],this.v4l^=s[8]^s[24],this.v4h^=s[9]^s[25],this.v5l^=s[10]^s[26],this.v5h^=s[11]^s[27],this.v6l^=s[12]^s[28],this.v6h^=s[13]^s[29],this.v7l^=s[14]^s[30],this.v7h^=s[15]^s[31],O(s)}destroy(){this.destroyed=!0,O(this.buffer32),this.set(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)}},F=ht(e=>new rt(e));var Y={Argon2d:0,Argon2i:1,Argon2id:2},v=4,bt=(e,t="")=>e===void 0?Uint8Array.of():C(e,t),E=new Uint32Array(256);function G(e,t,n,o){let i=E[2*e],r=E[2*e+1],f=E[2*t],l=E[2*t+1],c=E[2*n],a=E[2*n+1],h=E[2*o],d=E[2*o+1],u=0,w=0,p=0,y=0,x=0;u=Math.imul(i,f),w=((i>>>0)*(f>>>0)-(u>>>0))/4294967296+.5|0,p=(i>>>0)+(f>>>0)+(u<<1>>>0),r=r+l+(w<<1|u>>>31)+(p/4294967296|0)|0,i=p|0,y=d^r,x=h^i,d=x,h=y,u=Math.imul(c,h),w=((c>>>0)*(h>>>0)-(u>>>0))/4294967296+.5|0,p=(c>>>0)+(h>>>0)+(u<<1>>>0),a=a+d+(w<<1|u>>>31)+(p/4294967296|0)|0,c=p|0,y=l^a,x=f^c,l=y>>>24|x<<8,f=y<<8|x>>>24,u=Math.imul(i,f),w=((i>>>0)*(f>>>0)-(u>>>0))/4294967296+.5|0,p=(i>>>0)+(f>>>0)+(u<<1>>>0),r=r+l+(w<<1|u>>>31)+(p/4294967296|0)|0,i=p|0,y=d^r,x=h^i,d=y>>>16|x<<16,h=y<<16|x>>>16,u=Math.imul(c,h),w=((c>>>0)*(h>>>0)-(u>>>0))/4294967296+.5|0,p=(c>>>0)+(h>>>0)+(u<<1>>>0),a=a+d+(w<<1|u>>>31)+(p/4294967296|0)|0,c=p|0,y=l^a,x=f^c,l=y<<1|x>>>31,f=y>>>31|x<<1,E[2*e]=i,E[2*e+1]=r,E[2*t]=f,E[2*t+1]=l,E[2*n]=c,E[2*n+1]=a,E[2*o]=h,E[2*o+1]=d}function gt(e,t,n,o,i,r,f,l,c,a,h,d,u,w,p,y){G(e,i,c,u),G(t,r,a,w),G(n,f,h,p),G(o,l,d,y),G(e,r,h,y),G(t,f,d,u),G(n,l,c,w),G(o,i,a,p)}function X(e,t,n,o,i){if(i)for(let r=0;r<256;r++){let f=e[t+r]^e[n+r];E[r]=f,e[o+r]^=f}else for(let r=0;r<256;r++){let f=e[t+r]^e[n+r];E[r]=f,e[o+r]=f}for(let r=0;r<128;r+=16)gt(r,r+1,r+2,r+3,r+4,r+5,r+6,r+7,r+8,r+9,r+10,r+11,r+12,r+13,r+14,r+15);for(let r=0;r<16;r+=2)gt(r,r+1,r+16,r+17,r+32,r+33,r+48,r+49,r+64,r+65,r+80,r+81,r+96,r+97,r+112,r+113);for(let r=0;r<256;r++)e[o+r]^=E[r];O(E)}function ot(e,t){let n=V(e),o=new Uint32Array(1),i=V(o);if(o[0]=U(t),t<=64)return F.create({dkLen:t}).update(i).update(n).digest();let r=new Uint8Array(t),f=F.create({}).update(i).update(n).digest(),l=0;for(r.set(f.subarray(0,32)),l+=32;t-l>64;l+=32){let c=F.create({}).update(f);c.digestInto(f),c.destroy(),r.set(f.subarray(0,32),l)}return r.set(F(f,{dkLen:t-l}),l),O(f,o),r}function It(e,t,n,o,i,r,f=!1){let l;e===0?t===0?l=i-1:f?l=t*o+i-1:l=t*o+(i==0?-1:0):f?l=n-o+i-1:l=n-o+(i==0?-1:0);let c=e!==0&&t!==v-1?(t+1)*o:0,a=Math.imul(r,r),h=((r>>>0)*(r>>>0)-(a>>>0))/4294967296+.5|0,d=Math.imul(l,h),u=((l>>>0)*(h>>>0)-(d>>>0))/4294967296+.5|0,w=l-1-u;return(c+w)%n}var Mt=Math.pow(2,32),mt=1024**2,St=mt*1024;function D(e){return Number.isSafeInteger(e)&&e>=0&&e<Mt}function _t(e={}){e=z({},e);let t={t:3,m:mt,p:1,version:19,dkLen:32,maxmem:St,asyncTick:10};for(let[a,h]of Object.entries(e))h!==void 0&&(t[a]=h);let{dkLen:n,p:o,m:i,t:r,version:f,onProgress:l,asyncTick:c}=t;if(!D(n)||n<4)throw new Error('"dkLen" must be 4..');if(!D(o)||o<1||o>=Math.pow(2,24))throw new Error('"p" must be 1..2^24');if(!D(i))throw new Error('"m" must be 0..2^32');if(!D(r)||r<1)throw new Error('"t" (iterations) must be 1..2^32');if(l!==void 0&&typeof l!="function")throw new Error('"onProgress" must be a function');if($(c,"asyncTick"),!D(i)||i<8*o)throw new Error('"m" (memory) must be at least 8*p bytes');if(f!==16&&f!==19)throw new Error('"version" must be 0x10 or 0x13, got '+f);return t}function jt(e,t,n,o){let i=[],r=new Uint32Array(1),f=V(r),l,c,a=!1,h=(d,u)=>(typeof d=="string"&&i.push(u),u);try{let d=h(e,C(e,"password")),u=h(t,C(t,"salt"));if(!D(d.length))throw new Error('"password" must be less of length 1..4Gb');if(!D(u.length)||u.length<8)throw new Error('"salt" must be of length 8..4Gb');if(!Object.values(Y).includes(n))throw new Error('"type" was invalid');let{p:w,dkLen:p,m:y,t:x,version:b,key:g,personalization:T,maxmem:L,onProgress:H,asyncTick:I}=_t(o),A=g;g=h(A,bt(A,"key"));let k=T;T=h(k,bt(k,"personalization")),l=F.create();for(let _ of[w,p,y,x,b,n])r[0]=U(_),l.update(f);for(let _ of[d,u,g,T])r[0]=U(_.length),l.update(f).update(_);return c=new Uint32Array(18),l.digestInto(V(c)),a=!0,{H0:c,p:w,dkLen:p,m:y,t:x,version:b,maxmem:L,onProgress:H,asyncTick:I}}finally{l&&l.destroy(),O(r,...i),!a&&c&&O(c)}}function Nt(e,t,n,o){let{H0:i,p:r,dkLen:f,m:l,t:c,version:a,maxmem:h,onProgress:d,asyncTick:u}=jt(e,t,n,o);try{let w=r,p=4*r*Math.floor(l/(v*r)),y=Math.floor(p/r),x=Math.floor(y/v),b=p*1024;if(!D(h))throw new Error('"maxmem" expected <2**32, got '+h);if(b>h)throw new Error('"maxmem" limit was hit: memUsed(mP*1024)='+b+", maxmem="+h);let g=new Uint32Array(b/4);for(let L=0;L<r;L++){let H=256*y*L;i[17]=U(L),i[16]=U(0),g.set(M(j(ot(i,1024))),H),i[16]=U(1),g.set(M(j(ot(i,1024))),H+256)}let T=()=>{};if(d){let L=c*v*r*x-2*r,H=Math.max(Math.floor(L/1e4),1),I=0;T=()=>{I++,d&&(!(I%H)||I===L)&&d(I/L)}}return{type:n,mP:p,p:r,t:c,version:a,B:g,laneLen:y,lanes:w,segmentLen:x,dkLen:f,perBlock:T,asyncTick:u}}finally{O(i)}}function Rt(e,t,n,o){let i=new Uint32Array(256);for(let f=0;f<t;f++)for(let l=0;l<256;l++)i[l]^=e[256*(n*f+n-1)+l];let r=ot(M(i),o);return O(e,i),r}function*Gt(e,t){let{type:n,mP:o,p:i,t:r,version:f,B:l,laneLen:c,lanes:a,segmentLen:h,perBlock:d}=e;t[262]=o,t[264]=r,t[266]=n;for(let u=0;u<r;u++){let w=u!==0&&f===19;t[256]=u;for(let p=0;p<v;p++){t[260]=p;let y=n==Y.Argon2i||n==Y.Argon2id&&u===0&&p<2;for(let x=0;x<i;x++){t[258]=x,t[268]=0;let b=0;u===0&&p===0&&(b=2,y&&(t[268]++,X(t,256,2*256,0,!1),X(t,0,2*256,0,!1)));let g=x*c+p*h+b;for(let T=b;T<h;T++,g++){d();let L=g%c?g-1:g+c-1,H,I;if(y){let P=T%128;P===0&&(t[268]++,X(t,256,2*256,0,!1),X(t,0,2*256,0,!1)),H=t[2*P],I=t[2*P+1]}else{let P=256*L;H=l[P],I=l[P+1]}let A=u===0&&p===0?x:I%a,k=It(u,p,c,h,T,H,A==x),_=c*A+k;X(l,256*L,256*_,g*256,w),yield}}}}O(t)}function Dt(e,t,n,o){let i=Nt(t,n,e,o),r=Gt(i,new Uint32Array(3*256));for(;!r.next().done;);return Rt(i.B,i.p,i.laneLen,i.dkLen)}var At=(e,t,n={})=>Dt(Y.Argon2id,e,t,n);function kt(e,t,n,o,i){return At(e,t,{m:n,t:o,p:i,dkLen:32})}self.AnigmaArgon2idRaw=kt;typeof WorkerGlobalScope<"u"&&self instanceof WorkerGlobalScope&&(self.onmessage=function(e){let t=e.data||{};try{let n=kt(t.pass,t.salt,t.m,t.t,t.p);self.postMessage({id:t.id,ok:!0,key:n.buffer},[n.buffer])}catch(n){let o=String(n&&n.message||n),i=n&&n.name==="RangeError"||/allocation|memory|array buffer|invalid typed array length/i.test(o);self.postMessage({id:t.id,ok:!1,err:i?"argon2id-memory":"argon2id-failed"})}});})();
+</script>
+<!-- EMBEDDED-WORKER-BUNDLE:END -->
+<script src="vendor/argon2id.js"></script>
+<script src="js/argon2-client.js"></script>
+<script src="js/update.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/groups-ui.js"></script>
+</body>
+</html>
