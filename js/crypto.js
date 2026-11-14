@@ -171,7 +171,8 @@ const AnigmaCrypto = (function () {
   // kdf:'pbkdf2' and keep opening exactly as before — nothing is migrated or re-written behind the user's back.
   // Reading a blob that says argon2id when the module is absent throws 'argon2id-unavailable' (never a silent
   // PBKDF2 fallback under a misleading label). Creation goes through deriveNewKey(), which only steps the
-  // memory down on a genuine out-of-memory and refuses to go below 32 MiB.
+  // memory down on a genuine out-of-memory, refuses to go below 32 MiB, and refuses to fall back to PBKDF2 at all
+  // (it throws 'argon2id-unavailable' instead) unless a test explicitly passes { allowPbkdf2: true }.
   // Persian/Arabic keyboards type the SAME visible letters as different code points: Arabic yeh/kaf
   // (U+064A, U+0643), alef maksura (U+0649), and three different digit sets (ASCII, Arabic-Indic
   // U+0660.., Persian U+06F0..). Hashed as raw bytes those are different passwords, so switching
@@ -207,11 +208,15 @@ const AnigmaCrypto = (function () {
     throw new Error('unknown-kdf');
   }
 
-  // Creates a brand-new passphrase-derived key with the strongest KDF this build has: Argon2id when the
-  // vendored module is present (stepping the memory down only when the device cannot allocate it), PBKDF2 only
-  // when Argon2id is simply not loaded (e.g. the Node unit tests). Returns { key, kdf, kdfFields } where kdfFields
-  // is what the caller stores next to the salt: { kdf:'argon2id', kp:{m,t,p} } or { kdf:'pbkdf2', iter }.
-  async function deriveNewKey(pin, saltBytes) {
+  // Creates a brand-new passphrase-derived key with Argon2id (stepping the memory down only when the device cannot
+  // allocate it, never below ARGON2_FALLBACK_M's floor). Returns { key, kdfFields } where kdfFields is what the
+  // caller stores next to the salt: { kdf:'argon2id', kp:{m,t,p} }.
+  //
+  // There is NO silent downgrade: if Argon2id is not loaded (script blocked, failed integrity check, very old
+  // engine…) this throws Error('argon2id-unavailable') and the UI tells the user plainly that nothing was created.
+  // PBKDF2 is used for NEW data only when the caller explicitly passes { allowPbkdf2: true } — that switch exists
+  // for the Node unit tests and is never set by the app. PBKDF2 stays fully supported for READING old data.
+  async function deriveNewKey(pin, saltBytes, opts) {
     if (typeof self !== 'undefined' && typeof self.AnigmaArgon2idKDF === 'function') {
       const tries = [ARGON2_DEFAULT.m].concat(ARGON2_FALLBACK_M);
       for (let i = 0; i < tries.length; i++) {
@@ -222,6 +227,7 @@ const AnigmaCrypto = (function () {
         } catch (e) { if (!e || e.message !== 'argon2id-memory' || i === tries.length - 1) throw e; }
       }
     }
+    if (!(opts && opts.allowPbkdf2 === true)) throw new Error('argon2id-unavailable');
     const key = await deriveMasterKey(pin, saltBytes, PBKDF2_ITERATIONS, 'pbkdf2', PASSPHRASE_NORM_VERSION);
     return { key: key, kdfFields: { kdf: 'pbkdf2', iter: PBKDF2_ITERATIONS } };
   }
@@ -610,9 +616,9 @@ const AnigmaCrypto = (function () {
   // breaks importing a backup made under the old ones. v1 backups (no `kdf`/`iter` fields)
   // are still accepted for import, read back as pbkdf2 @ 200000 — the values the app used
   // to hardcode before this field existed.
-  async function exportIdentityBackup(privateKeyPkcs8Buf, publicKeyRawBuf, contactsArray, exportPassword) {
+  async function exportIdentityBackup(privateKeyPkcs8Buf, publicKeyRawBuf, contactsArray, exportPassword, opts) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    const made = await deriveNewKey(exportPassword, salt);
+    const made = await deriveNewKey(exportPassword, salt, opts);
     const key = made.key;
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const payload = JSON.stringify({
