@@ -1,0 +1,4 @@
+# Never commit the update-signing private key (it can push a mandatory update to every installed copy).
+*.pem
+update-signing-key*
+node_modules/
