@@ -88,7 +88,7 @@
     }
     const assets = {};
     if (m.assets && typeof m.assets === 'object') {
-      // The signed URL must sit in THIS version's own release folder (.../releases/download/v<version>/<file>), so a
+      // The signed URL must sit in THIS version's own release folder (…/releases/download/v<version>/<file>), so a
       // manifest signed for one version can never be repurposed to point at another release's file.
       const tagPrefix = ASSET_PREFIX + 'v' + m.version + '/';
       ['android', 'windows'].forEach(function (k) {
