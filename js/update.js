@@ -34,11 +34,13 @@
   const PUBLIC_KEY_JWK = { kty: 'EC', crv: 'P-256', x: 'yBtNTxSwSdxCYaTYh2dPlvZGyi3z9Nhynl9MaWYfghs', y: 'oMdB_70ld3FqbRbeih2kqPbxKxP0uSn7A9HvVoLr3vo' };
   // END PUBKEY
 
+  const MAX_ASSET_BYTES = 1024 * 1024 * 1024;       // sanity cap on the announced installer size (1 GiB)
+  const ASSET_EXT = { android: /\.apk$/i, windows: /\.(exe|msi)$/i };
   const MAX_BYTES = 64 * 1024;
   const FETCH_TIMEOUT_MS = 10000;
   const RECHECK_MS = 6 * 60 * 60 * 1000;
   const LS_REQUIRED = 'anigma_update_required'; // { m: base64(manifest bytes), s: signature } — re-verified on every read
-  const LS_SEEN = 'anigma_update_seen';          // highest verified version ever seen (rollback guard)
+  const LS_SEEN = 'anigma_update_seen';          // { m, s } of the highest verified manifest ever seen (rollback guard) — re-verified on every read, so storage tampering can neither fake nor block it
 
   // ---------- pure helpers (unit-tested) ----------
   function parseVersion(v) {
@@ -86,16 +88,29 @@
     }
     const assets = {};
     if (m.assets && typeof m.assets === 'object') {
+      // The signed URL must sit in THIS version's own release folder (.../releases/download/v<version>/<file>), so a
+      // manifest signed for one version can never be repurposed to point at another release's file.
+      const tagPrefix = ASSET_PREFIX + 'v' + m.version + '/';
       ['android', 'windows'].forEach(function (k) {
         const a = m.assets[k];
         if (!a) return;
-        if (typeof a.url !== 'string' || a.url.indexOf(ASSET_PREFIX) !== 0 || a.url.length > 400 || /[\s"'<>\\]|\.\./.test(a.url)) throw new Error('bad-manifest');
+        if (typeof a.url !== 'string' || a.url.indexOf(tagPrefix) !== 0 || a.url.length > 400 || /[\s"'<>\\?#%]|\.\./.test(a.url)) throw new Error('bad-manifest');
+        const file = a.url.slice(tagPrefix.length);
+        if (!/^[A-Za-z0-9._-]{1,120}$/.test(file) || !ASSET_EXT[k].test(file)) throw new Error('bad-manifest');
         if (typeof a.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(a.sha256)) throw new Error('bad-manifest');
-        if (!Number.isInteger(a.size) || a.size <= 0) throw new Error('bad-manifest');
+        if (!Number.isInteger(a.size) || a.size <= 0 || a.size > MAX_ASSET_BYTES) throw new Error('bad-manifest');
         assets[k] = { url: a.url, sha256: a.sha256, size: a.size };
       });
     }
     return { version: m.version, mandatory: m.mandatory !== false, notes: notes, assets: assets };
+  }
+
+  // A native shell (APK / EXE) can only update by installing a new installer. A verified manifest that carries none
+  // for THIS shell's platform is not actionable here, so it must never lock that app behind a gate it cannot clear.
+  // (Web / PWA copies update through the service worker and need no installer.)
+  function applicable(m, nativePlatform) {
+    if (nativePlatform === 'android' || nativePlatform === 'windows') return !!m.assets[nativePlatform];
+    return true;
   }
 
   async function openVerified(manifestBytes, signatureBytes, jwk) {
@@ -122,6 +137,19 @@
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable: fall back to online-only enforcement */ } }
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
 
+  // Highest version this device has ever seen in a SIGNATURE-VERIFIED manifest, or null. The stored record is
+  // re-verified against the shipped public key every time; anything forged, corrupt or in the old bare-string
+  // format is discarded (never trusted), so a write to localStorage cannot plant a fake "seen" version.
+  async function seenVersion(jwk) {
+    const raw = lsGet(LS_SEEN);
+    if (!raw) return null;
+    try {
+      const o = JSON.parse(raw);
+      const m = await openVerified(b64ToBytes(o.m), b64ToBytes(o.s), jwk);
+      return m.version;
+    } catch (e) { lsDel(LS_SEEN); return null; }
+  }
+
   // Returns { status: 'disabled' | 'current' | 'update' | 'error', manifest?, error? }
   async function check(localVersion, opts) {
     opts = opts || {};
@@ -134,11 +162,11 @@
       const signatureBytes = b64ToBytes(new TextDecoder().decode(results[1]));
       const m = await openVerified(manifestBytes, signatureBytes, jwk);
 
-      const seen = lsGet(LS_SEEN);
-      if (seen && parseVersion(seen) && compareVersions(m.version, seen) < 0) throw new Error('rollback'); // replayed older manifest
-      if (!seen || compareVersions(m.version, seen) > 0) lsSet(LS_SEEN, m.version);
+      const seen = await seenVersion(jwk);
+      if (seen && compareVersions(m.version, seen) < 0) throw new Error('rollback'); // replayed older manifest
+      if (!seen || compareVersions(m.version, seen) > 0) lsSet(LS_SEEN, JSON.stringify({ m: bytesToB64(manifestBytes), s: bytesToB64(signatureBytes) }));
 
-      if (compareVersions(m.version, localVersion) > 0) {
+      if (compareVersions(m.version, localVersion) > 0 && applicable(m, opts.nativePlatform)) {
         if (m.mandatory) lsSet(LS_REQUIRED, JSON.stringify({ m: bytesToB64(manifestBytes), s: bytesToB64(signatureBytes) }));
         return { status: 'update', manifest: m };
       }
@@ -150,14 +178,14 @@
   }
 
   // A previously verified mandatory update that is still newer than what is installed. Works offline.
-  async function storedRequirement(localVersion, jwk) {
+  async function storedRequirement(localVersion, jwk, nativePlatform) {
     jwk = jwk || PUBLIC_KEY_JWK;
     const raw = lsGet(LS_REQUIRED);
     if (!raw || !keyConfigured(jwk)) return null;
     try {
       const o = JSON.parse(raw);
       const m = await openVerified(b64ToBytes(o.m), b64ToBytes(o.s), jwk);
-      if (m.mandatory && compareVersions(m.version, localVersion) > 0) return m;
+      if (m.mandatory && compareVersions(m.version, localVersion) > 0 && applicable(m, nativePlatform)) return m;
     } catch (e) { /* corrupt or forged storage entry — ignore it */ }
     lsDel(LS_REQUIRED);
     return null;
@@ -235,6 +263,9 @@
         return;
       } catch (e) { /* fall through to the browser route */ }
     }
+    // On the Android / Windows app an update means a new installer. If the verified manifest carries no installer
+    // for this platform, say so — reloading the page would not update anything and would loop forever on the gate.
+    if (!asset && (plat === 'android' || plat === 'windows') && native) { setStatus('update.noAsset'); return; }
     if (asset) {
       $('fuShaVal').textContent = asset.sha256;
       $('fuSha').style.display = '';
@@ -253,8 +284,13 @@
     } else done();
   }
 
+  // 'android' | 'windows' only when a real native shell is present (a phone's plain browser is just 'web').
+  function nativePlatform() {
+    const n = root.AnigmaNative;
+    return n && (n.platform === 'android' || n.platform === 'windows') ? n.platform : null;
+  }
   async function runCheck() {
-    const r = await check(localVer);
+    const r = await check(localVer, { nativePlatform: nativePlatform() });
     if (r.status === 'update') showGate(r.manifest);
     else if (r.status === 'current' && gateShown) hideGate();
     return r;
@@ -266,7 +302,7 @@
     $('fuBtn').addEventListener('click', install);
     $('fuLater').addEventListener('click', hideGate);
     // 1) a remembered mandatory update gates the app immediately, even offline
-    storedRequirement(localVer).then(function (m) { if (m) showGate(m); }).catch(function () {});
+    storedRequirement(localVer, null, nativePlatform()).then(function (m) { if (m) showGate(m); }).catch(function () {});
     // 2) then ask GitHub (now, whenever the app returns to the foreground, and every few hours)
     runCheck();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') runCheck(); });
@@ -274,7 +310,7 @@
   }
 
   const api = {
-    start: start, check: check, storedRequirement: storedRequirement, verifySignature: verifySignature,
+    applicable: applicable, start: start, check: check, storedRequirement: storedRequirement, seenVersion: seenVersion, verifySignature: verifySignature,
     validateManifest: validateManifest, openVerified: openVerified, parseVersion: parseVersion, compareVersions: compareVersions,
     constants: { MANIFEST_URL: MANIFEST_URL, SIGNATURE_URL: SIGNATURE_URL, ASSET_PREFIX: ASSET_PREFIX, REPO: REPO, LS_REQUIRED: LS_REQUIRED, LS_SEEN: LS_SEEN }
   };
